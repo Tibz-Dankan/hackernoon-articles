@@ -1,0 +1,12 @@
+.vscode
+.idea
+
+.git
+.gitignore
+
+*.log
+*.out
+*.exe
+
+vendor/
+bin/
