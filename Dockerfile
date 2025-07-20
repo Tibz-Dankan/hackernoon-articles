@@ -7,7 +7,7 @@ RUN go mod download && go mod verify
 
 COPY . .
 
-RUN go build -o ./bin/hackernoon ./cmd
+RUN go build -o ./bin/hackernoon server/cmd
 
 ENV GO_ENV=production
 
