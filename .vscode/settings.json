@@ -4,7 +4,12 @@
     "gofiber",
     "gorm",
     "hackernoon",
+    "officedocument",
+    "openxmlformats",
+    "Presign",
     "sslmode",
-    "Tibz"
+    "Tibz",
+    "webp",
+    "wordprocessingml"
   ]
 }
