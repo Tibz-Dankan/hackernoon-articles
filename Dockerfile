@@ -13,4 +13,4 @@ ENV GO_ENV=production
 
 EXPOSE 3000
 
-ENTRYPOINT ["/app/bin/hackernoon"]
+ENTRYPOINT ["/bin/hackernoon"]
