@@ -5,9 +5,9 @@ WORKDIR /app/server
 COPY server/go.mod server/go.sum ./
 RUN go mod download && go mod verify
 
-COPY . .
+COPY server .
 
-RUN go build -o ./bin/hackernoon server/cmd
+RUN go build -o ./bin/hackernoon ./cmd
 
 ENV GO_ENV=production
 
