@@ -55,5 +55,5 @@ func main() {
 		return fiber.NewError(fiber.StatusNotFound, message)
 	})
 
-	app.Listen(":3000")
+	log.Fatal(app.Listen(":3000"))
 }
