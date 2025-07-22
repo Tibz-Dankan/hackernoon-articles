@@ -41,7 +41,7 @@ type UploadResponse struct {
 	ContentType string `json:"content_type"`
 }
 
-func NewS3Client(ctx context.Context) (*S3Client, error) {
+func (s3c *S3Client) NewS3Client(ctx context.Context) (*S3Client, error) {
 	accessKey := os.Getenv("S3_ACCESS_KEY_ID")
 	secretKey := os.Getenv("S3_ACCESS_KEY")
 	bucketName := os.Getenv("S3_BUCKET_NAME")

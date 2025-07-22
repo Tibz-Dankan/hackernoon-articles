@@ -7,6 +7,7 @@ import (
 
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/handlers/articles"
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/handlers/status"
+	"github.com/Tibz-Dankan/hackernoon-articles/internal/handlers/uploads"
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/middlewares"
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/pkg"
 
@@ -46,6 +47,12 @@ func main() {
 		return c.Next()
 	})
 	userGroup.Get("/", articles.GetAllArticles)
+
+	// uploads
+	uploadGroup := app.Group("/api/v0.1/uploads", func(c *fiber.Ctx) error {
+		return c.Next()
+	})
+	uploadGroup.Post("/", uploads.UploadFiles)
 
 	// Status
 	app.Get("/status", status.GetAppStatus)
