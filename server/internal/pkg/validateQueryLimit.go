@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/Tibz-Dankan/hackernoon-articles/constants"
+	"github.com/Tibz-Dankan/hackernoon-articles/internal/constants"
 )
 
 // ValidateQueryLimit function takes in limitParam as an argument  and
