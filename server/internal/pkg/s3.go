@@ -16,7 +16,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// To resolve acl error when uploading objects to the storage
+// To resolve acl error when uploading of objects to the storage
 type S3Client struct {
 	client     *s3.Client
 	bucketName string
