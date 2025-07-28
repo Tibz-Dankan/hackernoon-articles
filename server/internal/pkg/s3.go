@@ -84,7 +84,6 @@ func (s3c *S3Client) UploadFile(ctx context.Context, file io.Reader, originalFil
 		Key:         aws.String(filename),
 		Body:        file,
 		ContentType: aws.String(contentType),
-		ACL:         types.ObjectCannedACLPublicRead, // Make file publicly accessible
 	}
 
 	_, err := s3c.client.PutObject(ctx, input)
