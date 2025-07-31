@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/Tibz-Dankan/hackernoon-articles/internal/events/subscribers"
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/handlers/articles"
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/handlers/status"
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/handlers/uploads"
@@ -61,6 +62,9 @@ func main() {
 		message := fmt.Sprintf("api route '%s' doesn't exist!", c.Path())
 		return fiber.NewError(fiber.StatusNotFound, message)
 	})
+
+	// Initialize all event subscribers in the app
+	subscribers.InitEventSubscribers()
 
 	log.Fatal(app.Listen(":3000"))
 }
