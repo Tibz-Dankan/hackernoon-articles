@@ -20,9 +20,11 @@ type ScrapedArticleData struct {
 	ImageUrl        string
 	PostedAt        time.Time
 	AuthorName      string
+	AuthorPageURL   string // Added author's page URL
 	AuthorAvatarUrl string
 	Summary         string
-	Tags            []string
+	Tag             string   // Single tag from the tag div
+	Tags            []string // Keep for backward compatibility
 }
 
 type HackerNoonScraper struct {
@@ -78,14 +80,14 @@ func (h *HackerNoonScraper) ScrapeBitcoinArticles(maxArticles int, scrolls int) 
 
 	fmt.Println("Extracting article information...")
 
-	// Extract articles - these selectors may need adjustment based on current site structure
-	doc.Find("article, .story-card, .post-card, .feed-item, [class*='story'], [data-testid*='story']").Each(func(i int, s *goquery.Selection) {
+	// Find the infinite scroll container and extract articles
+	doc.Find(".infinite-scroll-component div article").Each(func(i int, s *goquery.Selection) {
 		if len(articles) >= maxArticles {
 			return
 		}
 
 		article := h.extractArticleData(s)
-		if article.Title != "" && h.isBitcoinRelated(article.Title, article.Summary, article.Tags) {
+		if article.Title != "" {
 			articles = append(articles, article)
 			fmt.Printf("Found article %d: %s\n", len(articles), article.Title)
 		}
@@ -97,22 +99,12 @@ func (h *HackerNoonScraper) ScrapeBitcoinArticles(maxArticles int, scrolls int) 
 func (h *HackerNoonScraper) extractArticleData(s *goquery.Selection) ScrapedArticleData {
 	article := ScrapedArticleData{}
 
-	// Extract title - try multiple possible selectors
-	titleSelectors := []string{
-		"h1", "h2", "h3",
-		".title", ".headline", ".story-title",
-		"[class*='title']", "[data-testid*='title']",
-		"a[href*='/']",
-	}
-	for _, selector := range titleSelectors {
-		if title := s.Find(selector).First().Text(); title != "" {
-			article.Title = strings.TrimSpace(title)
-			break
-		}
-	}
+	// Extract title from title-wrapper h2 a
+	titleLink := s.Find(".title-wrapper h2 a").First()
+	article.Title = strings.TrimSpace(titleLink.Text())
 
-	// Extract URL
-	if href, exists := s.Find("a").First().Attr("href"); exists {
+	// Extract article URL from title link
+	if href, exists := titleLink.Attr("href"); exists {
 		if strings.HasPrefix(href, "/") {
 			article.URL = "https://hackernoon.com" + href
 		} else if strings.HasPrefix(href, "https://hackernoon.com") {
@@ -122,92 +114,60 @@ func (h *HackerNoonScraper) extractArticleData(s *goquery.Selection) ScrapedArti
 		}
 	}
 
-	// Extract image URL - try multiple selectors
-	imageSelectors := []string{
-		"img[src*='hackernoon']",
-		"img[data-src*='hackernoon']",
-		".story-image img",
-		".article-image img",
-		"[class*='image'] img",
-		"img[src*='cdn']",
-		"img",
-	}
-	for _, selector := range imageSelectors {
-		img := s.Find(selector).First()
-		if src, exists := img.Attr("src"); exists && src != "" {
-			if strings.Contains(src, "http") {
-				article.ImageUrl = src
-				break
-			}
-		}
-		// Try data-src for lazy loaded images
-		if dataSrc, exists := img.Attr("data-src"); exists && dataSrc != "" {
-			if strings.Contains(dataSrc, "http") {
-				article.ImageUrl = dataSrc
-				break
-			}
+	// Extract image URL from image-wrapper a href
+	imageLink := s.Find(".image-wrapper a").First()
+	if href, exists := imageLink.Attr("href"); exists {
+		if strings.HasPrefix(href, "http") {
+			article.ImageUrl = href
+		} else if strings.HasPrefix(href, "/") {
+			article.ImageUrl = "https://hackernoon.com" + href
 		}
 	}
 
 	// If no image found, set a default placeholder
 	if article.ImageUrl == "" {
-		article.ImageUrl = "https://hackernoon.com/hn-logo.png" // Default placeholder
+		article.ImageUrl = "https://hackernoon.com/hn-logo.png"
 	}
 
-	// Extract author name
-	authorSelectors := []string{
-		".author", ".by-author", ".writer", ".username",
-		"[class*='author']", "[data-testid*='author']",
-		".byline", ".author-name",
-	}
-	for _, selector := range authorSelectors {
-		if author := s.Find(selector).Text(); author != "" {
-			article.AuthorName = strings.TrimSpace(author)
-			break
+	// Extract author information from card-info .author .author-info
+	authorInfo := s.Find(".card-info .author .author-info").First()
+
+	// Extract author name and page URL from author-link
+	authorLink := authorInfo.Find("a.author-link").First()
+	article.AuthorName = strings.TrimSpace(authorLink.Text())
+
+	if href, exists := authorLink.Attr("href"); exists {
+		if strings.HasPrefix(href, "/") {
+			article.AuthorPageURL = "https://hackernoon.com" + href
+		} else if strings.HasPrefix(href, "https://hackernoon.com") {
+			article.AuthorPageURL = href
+		} else if strings.HasPrefix(href, "http") {
+			article.AuthorPageURL = href
 		}
 	}
 
-	// Extract author avatar
-	avatarSelectors := []string{
-		".author img", ".author-avatar img", ".profile-image img",
-		"[class*='author'] img", "[class*='avatar'] img",
-		".byline img", ".author-info img",
-	}
-	for _, selector := range avatarSelectors {
-		if avatarSrc, exists := s.Find(selector).Attr("src"); exists && avatarSrc != "" {
-			if strings.Contains(avatarSrc, "http") {
-				article.AuthorAvatarUrl = avatarSrc
-			} else if strings.HasPrefix(avatarSrc, "/") {
-				article.AuthorAvatarUrl = "https://hackernoon.com" + avatarSrc
-			}
-			break
+	// Extract author avatar from author section span img
+	authorAvatar := s.Find(".card-info .author span img").First()
+	if src, exists := authorAvatar.Attr("src"); exists && src != "" {
+		if strings.Contains(src, "http") {
+			article.AuthorAvatarUrl = src
+		} else if strings.HasPrefix(src, "/") {
+			article.AuthorAvatarUrl = "https://hackernoon.com" + src
 		}
 	}
 
 	// Set default avatar if none found
 	if article.AuthorAvatarUrl == "" {
-		article.AuthorAvatarUrl = "https://hackernoon.com/default-avatar.png" // Default avatar
+		article.AuthorAvatarUrl = "https://hackernoon.com/default-avatar.png"
 	}
 
-	// Extract publish date and convert to time.Time
-	dateSelectors := []string{".date", ".publish-date", ".created-at", "time", "[class*='date']"}
-	for _, selector := range dateSelectors {
-		dateElement := s.Find(selector).First()
+	// Extract publish date from .author-info .date
+	dateDiv := authorInfo.Find(".date").First()
+	dateText := strings.TrimSpace(dateDiv.Text())
 
-		// Try datetime attribute first
-		if datetime, exists := dateElement.Attr("datetime"); exists {
-			if parsedTime, err := h.parseDateTime(datetime); err == nil {
-				article.PostedAt = parsedTime
-				break
-			}
-		}
-
-		// Try text content
-		if dateText := dateElement.Text(); dateText != "" {
-			if parsedTime, err := h.parseDateTime(strings.TrimSpace(dateText)); err == nil {
-				article.PostedAt = parsedTime
-				break
-			}
+	if dateText != "" {
+		if parsedTime, err := h.parseDateTime(dateText); err == nil {
+			article.PostedAt = parsedTime
 		}
 	}
 
@@ -216,8 +176,18 @@ func (h *HackerNoonScraper) extractArticleData(s *goquery.Selection) ScrapedArti
 		article.PostedAt = time.Now()
 	}
 
-	// Extract summary/description
-	summarySelectors := []string{".summary", ".description", ".excerpt", ".snippet", "p"}
+	// Extract tag from image-wrapper .tag a
+	tagLink := s.Find(".image-wrapper .tag a").First()
+	article.Tag = strings.TrimSpace(tagLink.Text())
+
+	// Also add to Tags array for backward compatibility
+	if article.Tag != "" {
+		article.Tags = append(article.Tags, article.Tag)
+	}
+
+	// Extract summary - this might need adjustment based on actual structure
+	// Since you didn't mention summary location, keeping flexible approach
+	summarySelectors := []string{".summary", ".description", ".excerpt", ".snippet"}
 	for _, selector := range summarySelectors {
 		if summary := s.Find(selector).First().Text(); summary != "" && len(summary) > 50 {
 			article.Summary = strings.TrimSpace(summary)
@@ -228,25 +198,17 @@ func (h *HackerNoonScraper) extractArticleData(s *goquery.Selection) ScrapedArti
 		}
 	}
 
-	// Extract tags
-	s.Find(".tag, .tags a, .category, [class*='tag']").Each(func(i int, tag *goquery.Selection) {
-		if tagText := strings.TrimSpace(tag.Text()); tagText != "" {
-			article.Tags = append(article.Tags, tagText)
-		}
-	})
-
 	return article
 }
 
 func (h *HackerNoonScraper) parseDateTime(dateStr string) (time.Time, error) {
-	// List of common date formats used by Hacker Noon
 	formats := []string{
+		"Jan 2, 2006",     // Primary format based on your example
+		"January 2, 2006", // Full month name variant
 		time.RFC3339,
 		time.RFC822,
 		"2006-01-02T15:04:05Z",
 		"2006-01-02 15:04:05",
-		"Jan 2, 2006",
-		"January 2, 2006",
 		"2006-01-02",
 		"02/01/2006",
 		"01/02/2006",
@@ -263,78 +225,33 @@ func (h *HackerNoonScraper) parseDateTime(dateStr string) (time.Time, error) {
 
 func (h *HackerNoonScraper) performInfiniteScroll(scrolls int, maxArticles int) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
-		fmt.Printf("Starting infinite scroll to load more articles...\n")
+		log.Printf("Starting infinite scroll to load more articles...\n")
 
 		for i := 0; i < scrolls; i++ {
-			// Check current number of articles
+			// Check current number of articles in the infinite-scroll-component
 			var articleCount int
 			err := chromedp.Evaluate(`
-				document.querySelectorAll('article, .story-card, .post-card, .feed-item, [class*="story"], [data-testid*="story"]').length
+				document.querySelectorAll('.infinite-scroll-component article').length
 			`, &articleCount).Do(ctx)
 			if err == nil && articleCount >= maxArticles {
-				fmt.Printf("Found enough articles (%d), stopping scroll\n", articleCount)
+				log.Printf("Found enough articles (%d), stopping scroll\n", articleCount)
 				break
 			}
 
-			// Scroll to bottom
+			// Scroll to bottom to trigger auto-loading
 			err = chromedp.Evaluate(`window.scrollTo(0, document.body.scrollHeight)`, nil).Do(ctx)
 			if err != nil {
 				return fmt.Errorf("scroll failed: %v", err)
 			}
 
-			// Wait for new content to load
+			// Wait for new content to auto-load
 			time.Sleep(3 * time.Second)
 
-			// Try to click "Load More" button if it exists
-			loadMoreSelectors := []string{
-				"button[class*='load']", "button[class*='more']",
-				".load-more", "[data-testid*='load']",
-			}
-			for _, selector := range loadMoreSelectors {
-				chromedp.Click(selector, chromedp.ByQuery).Do(ctx)
-			}
-			time.Sleep(2 * time.Second)
-
-			fmt.Printf("Completed scroll %d/%d - Current articles: %d\n", i+1, scrolls, articleCount)
+			log.Printf("Completed scroll %d/%d - Current articles: %d\n", i+1, scrolls, articleCount)
 		}
 
 		return nil
 	})
-}
-
-func (h *HackerNoonScraper) isBitcoinRelated(title, summary string, tags []string) bool {
-	keywords := []string{
-		"bitcoin", "btc", "cryptocurrency", "crypto", "blockchain",
-		"satoshi", "mining", "wallet", "hodl", "defi", "web3",
-	}
-
-	// Check title
-	titleLower := strings.ToLower(title)
-	for _, keyword := range keywords {
-		if strings.Contains(titleLower, keyword) {
-			return true
-		}
-	}
-
-	// Check summary
-	summaryLower := strings.ToLower(summary)
-	for _, keyword := range keywords {
-		if strings.Contains(summaryLower, keyword) {
-			return true
-		}
-	}
-
-	// Check tags
-	for _, tag := range tags {
-		tagLower := strings.ToLower(tag)
-		for _, keyword := range keywords {
-			if strings.Contains(tagLower, keyword) {
-				return true
-			}
-		}
-	}
-
-	return false
 }
 
 func (h *HackerNoonScraper) Close() {
@@ -378,14 +295,14 @@ func saveToJSON(articles []ScrapedArticleData) error {
 
 // Main scraping function that handles both JSON export and event publishing
 func (h *HackerNoonScraper) ScrapeAndSave(maxArticles int, scrolls int) error {
-	// Scrape articles
+	// Scrape articles - removed Bitcoin filtering since we're already on Bitcoin page
 	articles, err := h.ScrapeBitcoinArticles(maxArticles, scrolls)
 	if err != nil {
 		return fmt.Errorf("scraping failed: %v", err)
 	}
 
 	if len(articles) == 0 {
-		fmt.Println("⚠️  No Bitcoin articles found")
+		log.Println("⚠️  No articles found")
 		return nil
 	}
 
@@ -398,8 +315,8 @@ func ScrapeHackerNoonBitcoinArticles(maxArticles, scrolls int) error {
 	scraper := NewHackerNoonScraper()
 	defer scraper.Close()
 
-	fmt.Println("=== Hacker Noon Bitcoin Articles Scraper ===")
-	fmt.Println("Starting JavaScript-aware scraping of Hacker Noon...")
+	log.Println("=== Hacker Noon Bitcoin Articles Scraper ===")
+	log.Println("Starting JavaScript-aware scraping of Hacker Noon...")
 
 	return scraper.ScrapeAndSave(maxArticles, scrolls)
 }
@@ -409,8 +326,8 @@ func ScrapeHackerNoonBitcoinArticlesOnly(maxArticles, scrolls int) ([]ScrapedArt
 	scraper := NewHackerNoonScraper()
 	defer scraper.Close()
 
-	fmt.Println("=== Hacker Noon Bitcoin Articles Scraper (Data Only) ===")
-	fmt.Println("Starting JavaScript-aware scraping of Hacker Noon...")
+	log.Println("=== Hacker Noon Bitcoin Articles Scraper (Data Only) ===")
+	log.Println("Starting JavaScript-aware scraping of Hacker Noon...")
 
 	return scraper.ScrapeBitcoinArticles(maxArticles, scrolls)
 }
