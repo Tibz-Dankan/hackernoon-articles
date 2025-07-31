@@ -25,6 +25,7 @@ type ScrapedArticleData struct {
 	Summary         string
 	Tag             string   // Single tag from the tag div
 	Tags            []string // Keep for backward compatibility
+	ReadDuration    string   // Read duration like "4m", "2h", etc.
 }
 
 type HackerNoonScraper struct {
@@ -81,7 +82,7 @@ func (h *HackerNoonScraper) ScrapeBitcoinArticles(maxArticles int, scrolls int) 
 	fmt.Println("Extracting article information...")
 
 	// Find the infinite scroll container and extract articles
-	doc.Find(".infinite-scroll-component div article").Each(func(i int, s *goquery.Selection) {
+	doc.Find(".infinite-scroll-component article").Each(func(i int, s *goquery.Selection) {
 		if len(articles) >= maxArticles {
 			return
 		}
@@ -115,12 +116,13 @@ func (h *HackerNoonScraper) extractArticleData(s *goquery.Selection) ScrapedArti
 	}
 
 	// Extract image URL from image-wrapper a href
-	imageLink := s.Find(".image-wrapper a").First()
-	if href, exists := imageLink.Attr("href"); exists {
-		if strings.HasPrefix(href, "http") {
-			article.ImageUrl = href
-		} else if strings.HasPrefix(href, "/") {
-			article.ImageUrl = "https://hackernoon.com" + href
+	// imageLink := s.Find(".image-wrapper a").First()
+	imageLink := s.Find(".image-wrapper  a span img").First()
+	if src, exists := imageLink.Attr("src"); exists && src != "" {
+		if strings.Contains(src, "http") {
+			article.ImageUrl = src
+		} else if strings.HasPrefix(src, "/") {
+			article.ImageUrl = "https://hackernoon.com" + src
 		}
 	}
 
