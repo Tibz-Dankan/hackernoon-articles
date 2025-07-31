@@ -335,10 +335,17 @@ func ScrapeHackerNoonBitcoinArticlesOnly(maxArticles, scrolls int) ([]ScrapedArt
 }
 
 func init() {
-	log.Println("App initialized. Scheduling ScrapeHackerNoonBitcoinArticles() to run in 15 seconds...")
+	// log.Println("App initialized. Scheduling ScrapeHackerNoonBitcoinArticles() to run in 15 seconds...")
+
+	// go func() {
+	// 	time.Sleep(15 * time.Second)
+	// 	ScrapeHackerNoonBitcoinArticles(200, 24)
+	// }()
+
+	log.Println("App initialized. Scheduling ScrapeHackerNoonBitcoinArticles() to run in  2 minutes...")
 
 	go func() {
-		time.Sleep(15 * time.Second)
+		time.Sleep(2 * time.Minute)
 		ScrapeHackerNoonBitcoinArticles(200, 24)
 	}()
 }
