@@ -14,13 +14,13 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-type ScrapedArticleData struct {
+type ScrapedArticle struct {
 	Title           string
 	URL             string
 	ImageUrl        string
 	PostedAt        time.Time
 	AuthorName      string
-	AuthorPageURL   string // Added author's page URL
+	AuthorPageURL   string
 	AuthorAvatarUrl string
 	Summary         string
 	Tag             string   // Single tag from the tag div
@@ -48,9 +48,9 @@ func NewHackerNoonScraper() *HackerNoonScraper {
 	return &HackerNoonScraper{ctx: ctx}
 }
 
-func (h *HackerNoonScraper) ScrapeBitcoinArticles(maxArticles int, scrolls int) ([]ScrapedArticleData, error) {
+func (h *HackerNoonScraper) ScrapeBitcoinArticles(maxArticles int, scrolls int) ([]ScrapedArticle, error) {
 	var htmlContent string
-	var articles []ScrapedArticleData
+	var articles []ScrapedArticle
 
 	fmt.Println("Navigating to Hacker Noon Bitcoin articles...")
 
@@ -97,8 +97,8 @@ func (h *HackerNoonScraper) ScrapeBitcoinArticles(maxArticles int, scrolls int) 
 	return articles, nil
 }
 
-func (h *HackerNoonScraper) extractArticleData(s *goquery.Selection) ScrapedArticleData {
-	article := ScrapedArticleData{}
+func (h *HackerNoonScraper) extractArticleData(s *goquery.Selection) ScrapedArticle {
+	article := ScrapedArticle{}
 
 	// Extract title from title-wrapper h2 a
 	titleLink := s.Find(".title-wrapper h2 a").First()
@@ -261,7 +261,7 @@ func (h *HackerNoonScraper) Close() {
 }
 
 // Save scraped articles to JSON file
-func saveToJSON(articles []ScrapedArticleData) error {
+func saveToJSON(articles []ScrapedArticle) error {
 	// Create filename with current date
 	now := time.Now()
 	filename := fmt.Sprintf("%s-hackernoon-bitcoin-articles.json", now.Format("20060102-150405"))
@@ -324,7 +324,7 @@ func ScrapeHackerNoonBitcoinArticles(maxArticles, scrolls int) error {
 }
 
 // Alternative function that returns articles without saving (for testing)
-func ScrapeHackerNoonBitcoinArticlesOnly(maxArticles, scrolls int) ([]ScrapedArticleData, error) {
+func ScrapeHackerNoonBitcoinArticlesOnly(maxArticles, scrolls int) ([]ScrapedArticle, error) {
 	scraper := NewHackerNoonScraper()
 	defer scraper.Close()
 

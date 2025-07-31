@@ -11,29 +11,38 @@ func (a *Author) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
-func (a *Author) Create(article Article) (Article, error) {
-	result := db.Create(&article)
+func (a *Author) Create(author Author) (Author, error) {
+	result := db.Create(&author)
 
 	if result.Error != nil {
-		return article, result.Error
+		return author, result.Error
 	}
-	return article, nil
+	return author, nil
 }
 
-func (a *Author) FindOne(id string) (Article, error) {
-	var article Article
-	db.First(&article, "id = ?", id)
+func (a *Author) FindOne(id string) (Author, error) {
+	var author Author
+	db.First(&author, "id = ?", id)
 
-	return article, nil
+	return author, nil
 }
 
-func (a *Author) FindByTitle(title string) (Article, error) {
-	var article Article
-	if err := db.First(&article, "title = ?", title).Error; err != nil {
-		return article, err
+func (a *Author) FindByName(name string) (Author, error) {
+	var author Author
+	if err := db.First(&author, "name = ?", name).Error; err != nil {
+		return author, err
 	}
 
-	return article, nil
+	return author, nil
+}
+
+func (a *Author) FindByPage(pageURL string) (Author, error) {
+	var author Author
+	if err := db.First(&author, "\"pageURL\" = ?", pageURL).Error; err != nil {
+		return author, err
+	}
+
+	return author, nil
 }
 
 func (a *Author) FindAll(limit float64, cursor string) ([]Author, error) {
@@ -52,7 +61,7 @@ func (a *Author) FindAll(limit float64, cursor string) ([]Author, error) {
 	return authors, nil
 }
 
-func (a *Author) Update() (Article, error) {
+func (a *Author) Update() (Author, error) {
 	db.Save(&a)
 
 	author, err := a.FindOne(a.ID)
