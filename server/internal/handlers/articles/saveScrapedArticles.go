@@ -22,7 +22,7 @@ func SaveScrapedArticles() {
 
 		s3Client := pkg.S3Client{}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 		defer cancel()
 
 		newS3Client, err := s3Client.NewS3Client(ctx)

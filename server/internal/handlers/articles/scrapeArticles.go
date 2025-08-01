@@ -52,7 +52,7 @@ func (h *HackerNoonScraper) ScrapeBitcoinArticles(maxArticles int, scrolls int) 
 	var htmlContent string
 	var articles []ScrapedArticle
 
-	fmt.Println("Navigating to Hacker Noon Bitcoin articles...")
+	log.Println("Navigating to Hacker Noon Bitcoin articles...")
 
 	err := chromedp.Run(h.ctx,
 		// Navigate to Bitcoin tagged articles
@@ -90,7 +90,7 @@ func (h *HackerNoonScraper) ScrapeBitcoinArticles(maxArticles int, scrolls int) 
 		article := h.extractArticleData(s)
 		if article.Title != "" {
 			articles = append(articles, article)
-			fmt.Printf("Found article %d: %s\n", len(articles), article.Title)
+			log.Printf("Found article %d: %s\n", len(articles), article.Title)
 		}
 	})
 
@@ -115,20 +115,14 @@ func (h *HackerNoonScraper) extractArticleData(s *goquery.Selection) ScrapedArti
 		}
 	}
 
-	// Extract image URL from image-wrapper a href
-	// imageLink := s.Find(".image-wrapper a").First()
-	imageLink := s.Find(".image-wrapper  a span img").First()
+	// Extract image URL from image-wrapper a span img src
+	imageLink := s.Find(".image-wrapper a span img").First()
 	if src, exists := imageLink.Attr("src"); exists && src != "" {
 		if strings.Contains(src, "http") {
 			article.ImageUrl = src
 		} else if strings.HasPrefix(src, "/") {
 			article.ImageUrl = "https://hackernoon.com" + src
 		}
-	}
-
-	// If no image found, set a default placeholder
-	if article.ImageUrl == "" {
-		article.ImageUrl = "https://hackernoon.com/hn-logo.png"
 	}
 
 	// Extract author information from card-info .author .author-info
@@ -163,19 +157,39 @@ func (h *HackerNoonScraper) extractArticleData(s *goquery.Selection) ScrapedArti
 		article.AuthorAvatarUrl = "https://hackernoon.com/default-avatar.png"
 	}
 
-	// Extract publish date from .author-info .date
+	// Extract publish date and read duration from .author-info .date
 	dateDiv := authorInfo.Find(".date").First()
-	dateText := strings.TrimSpace(dateDiv.Text())
+
+	// First extract the read duration from the inner div
+	readDurationDiv := dateDiv.Find("div").First()
+	article.ReadDuration = strings.TrimSpace(readDurationDiv.Text())
+
+	// Get only the direct text content of dateDiv (excluding inner divs)
+	var dateText string
+	dateDiv.Contents().Each(func(i int, s *goquery.Selection) {
+		// Only get text nodes (not element nodes)
+		if goquery.NodeName(s) == "#text" {
+			dateText += s.Text()
+		}
+	})
+	dateText = strings.TrimSpace(dateText)
+
+	log.Println("readDuration:", article.ReadDuration)
+	log.Println("dateText:", dateText)
 
 	if dateText != "" {
 		if parsedTime, err := h.parseDateTime(dateText); err == nil {
 			article.PostedAt = parsedTime
+			log.Println("parsed date:", parsedTime)
+		} else {
+			log.Println("date parsing error:", err)
 		}
 	}
 
 	// If no date found, use current time as fallback
 	if article.PostedAt.IsZero() {
 		article.PostedAt = time.Now()
+		log.Println("using fallback date:", article.PostedAt)
 	}
 
 	// Extract tag from image-wrapper .tag a
@@ -340,6 +354,8 @@ func init() {
 	// go func() {
 	// 	time.Sleep(15 * time.Second)
 	// 	ScrapeHackerNoonBitcoinArticles(200, 24)
+	// 	// ScrapeHackerNoonBitcoinArticles(2000, 500)
+	// 	// ScrapeHackerNoonBitcoinArticles(10000, 500)
 	// }()
 
 	log.Println("App initialized. Scheduling ScrapeHackerNoonBitcoinArticles() to run in  2 minutes...")
