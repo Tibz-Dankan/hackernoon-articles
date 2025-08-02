@@ -3,7 +3,6 @@ package articles
 import (
 	"context"
 	"log"
-	"time"
 
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/constants"
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/events"
@@ -22,8 +21,9 @@ func SaveScrapedArticles() {
 
 		s3Client := pkg.S3Client{}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-		defer cancel()
+		// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+		// defer cancel()
+		ctx := context.Background()
 
 		newS3Client, err := s3Client.NewS3Client(ctx)
 		if err != nil {
@@ -35,6 +35,10 @@ func SaveScrapedArticles() {
 			scrapedArticle, ok := scrapedArticleEvent.Data.(ScrapedArticle)
 			if !ok {
 				log.Printf("Invalid articleData type received: %T", scrapedArticle)
+				continue
+			}
+			if scrapedArticle.AuthorName == "" || scrapedArticle.Title == "" {
+				log.Printf("Article is has no title or author's name ")
 				continue
 			}
 			log.Printf("Saving article in progress %s:", scrapedArticle.Title)
@@ -49,13 +53,13 @@ func SaveScrapedArticles() {
 				continue
 			}
 
-			articleAuthor, err := author.FindOne(savedArticle.AuthorID)
+			articleAuthor, err := author.FindByName(scrapedArticle.AuthorName)
 			if err != nil && err.Error() != constants.RECORD_NOT_FOUND_ERROR {
 				log.Printf("Error finding article's author: %v", err)
 				continue
 			}
 
-			// Create author if doesn't
+			// Create author if doesn't exist
 			if articleAuthor.ID == "" {
 				avatarImgBuf, getImgErr := imageProcessor.GetImageFromURL(scrapedArticle.AuthorAvatarUrl)
 				if getImgErr != nil {
@@ -105,8 +109,8 @@ func SaveScrapedArticles() {
 			article.Title = scrapedArticle.Title
 			article.PostedAt = scrapedArticle.PostedAt
 			article.ReadDuration = scrapedArticle.ReadDuration
-			article.ImageFilename = "ImageFilename"
-			article.ImageUrl = "ImageUrl"
+			article.ImageFilename = "ImageFilename.jpeg"
+			article.ImageUrl = scrapedArticle.ImageUrl
 
 			articleImgBuf, getImgErr := imageProcessor.GetImageFromURL(scrapedArticle.ImageUrl)
 			if getImgErr != nil {
