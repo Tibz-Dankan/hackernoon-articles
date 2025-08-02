@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -63,8 +64,8 @@ func (h *HackerNoonScraper) ScrapeBitcoinArticles(maxArticles int, scrolls int) 
 		chromedp.Sleep(3*time.Second),
 
 		// Perform infinite scrolling to load more articles
-		h.performInfiniteScroll(scrolls, maxArticles),
-
+		// h.performInfiniteScroll(scrolls, maxArticles),
+		h.performInfiniteScrollOptimized(scrolls, maxArticles),
 		// Get the final HTML content
 		chromedp.OuterHTML("html", &htmlContent),
 	)
@@ -239,30 +240,355 @@ func (h *HackerNoonScraper) parseDateTime(dateStr string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("unable to parse date: %s", dateStr)
 }
 
-func (h *HackerNoonScraper) performInfiniteScroll(scrolls int, maxArticles int) chromedp.Action {
+// func (h *HackerNoonScraper) performInfiniteScroll(scrolls int, maxArticles int) chromedp.Action {
+// 	return chromedp.ActionFunc(func(ctx context.Context) error {
+// 		log.Printf("Starting infinite scroll with manual image loading...\n")
+
+// 		for i := 0; i < scrolls; i++ {
+// 			// Check current number of articles
+// 			var articleCount int
+// 			err := chromedp.Evaluate(`
+// 				document.querySelectorAll('.infinite-scroll-component article').length
+// 			`, &articleCount).Do(ctx)
+// 			if err == nil && articleCount >= maxArticles {
+// 				log.Printf("Found enough articles (%d), stopping scroll\n", articleCount)
+// 				break
+// 			}
+
+// 			log.Printf("Before scroll %d: %d articles found\n", i+1, articleCount)
+
+// 			// Load images for current articles
+// 			err = h.loadAllCurrentImages().Do(ctx)
+// 			if err != nil {
+// 				log.Printf("Error loading images: %v\n", err)
+// 			}
+
+// 			// Scroll to load more articles
+// 			err = chromedp.Evaluate(`window.scrollTo(0, document.body.scrollHeight)`, nil).Do(ctx)
+// 			if err != nil {
+// 				return fmt.Errorf("scroll failed: %v", err)
+// 			}
+
+// 			// Wait for new articles to load
+// 			time.Sleep(3 * time.Second)
+
+// 			var newArticleCount int
+// 			chromedp.Evaluate(`
+// 				document.querySelectorAll('.infinite-scroll-component article').length
+// 			`, &newArticleCount).Do(ctx)
+
+// 			log.Printf("After scroll %d: %d articles found (added %d new)\n", i+1, newArticleCount, newArticleCount-articleCount)
+// 		}
+
+// 		// Final image loading pass
+// 		log.Println("Final image loading pass...")
+// 		err := h.loadAllCurrentImages().Do(ctx)
+// 		if err != nil {
+// 			log.Printf("Error in final image loading: %v\n", err)
+// 		}
+
+// 		return nil
+// 	})
+// }
+
+// // Load all images currently on the page with 100% reliability
+// func (h *HackerNoonScraper) loadAllCurrentImages() chromedp.Action {
+// 	return chromedp.ActionFunc(func(ctx context.Context) error {
+// 		log.Println("Loading all current images with 100% reliability...")
+
+// 		// First, get total image count
+// 		var totalImages int
+// 		err := chromedp.Evaluate(`
+// 			(() => {
+// 				return document.querySelectorAll('.infinite-scroll-component img[data-nimg]').length;
+// 			})();
+// 		`, &totalImages).Do(ctx)
+// 		if err != nil {
+// 			return fmt.Errorf("error counting images: %v", err)
+// 		}
+
+// 		log.Printf("Found %d total images to load\n", totalImages)
+
+// 		// Load images in batches by article
+// 		var articleCount int
+// 		err = chromedp.Evaluate(`
+// 			(() => {
+// 				return document.querySelectorAll('.infinite-scroll-component article').length;
+// 			})();
+// 		`, &articleCount).Do(ctx)
+// 		if err != nil {
+// 			return fmt.Errorf("error counting articles: %v", err)
+// 		}
+
+// 		log.Printf("Processing %d articles for image loading\n", articleCount)
+
+// 		// Process each article individually for maximum reliability
+// 		for articleIndex := 0; articleIndex < articleCount; articleIndex++ {
+// 			log.Printf("Loading images for article %d/%d\n", articleIndex+1, articleCount)
+
+// 			// Load images for this specific article with persistence
+// 			err = h.loadImagesForSingleArticle(articleIndex).Do(ctx)
+// 			if err != nil {
+// 				log.Printf("Error loading images for article %d: %v\n", articleIndex+1, err)
+// 			}
+
+// 			// Small delay between articles to prevent overwhelming
+// 			time.Sleep(100 * time.Millisecond)
+// 		}
+
+// 		// Final verification - keep trying until ALL images are loaded
+// 		log.Println("Final verification: ensuring 100% image loading...")
+// 		maxGlobalAttempts := 30 // Up to 15 seconds of additional attempts
+
+// 		for attempt := 0; attempt < maxGlobalAttempts; attempt++ {
+// 			var stats map[string]interface{}
+// 			err = chromedp.Evaluate(`
+// 				(() => {
+// 					const allImages = document.querySelectorAll('.infinite-scroll-component img[data-nimg]');
+// 					const stats = {
+// 						total: allImages.length,
+// 						loaded: 0,
+// 						placeholder: 0
+// 					};
+
+// 					allImages.forEach(img => {
+// 						if (img.src.startsWith('data:image/gif')) {
+// 							stats.placeholder++;
+// 						} else if (img.src.startsWith('http')) {
+// 							stats.loaded++;
+// 						}
+// 					});
+
+// 					return stats;
+// 				})();
+// 			`, &stats).Do(ctx)
+
+// 			if err == nil {
+// 				loaded := int(stats["loaded"].(float64))
+// 				placeholder := int(stats["placeholder"].(float64))
+// 				total := int(stats["total"].(float64))
+
+// 				log.Printf("Global verification attempt %d: %d/%d loaded, %d still placeholder\n", attempt+1, loaded, total, placeholder)
+
+// 				// Check if ALL images are loaded (100%)
+// 				if placeholder == 0 {
+// 					log.Printf("SUCCESS: 100%% image loading achieved! (%d/%d)\n", loaded, total)
+// 					break
+// 				}
+// 			}
+
+// 			// Aggressively try to load remaining placeholder images
+// 			chromedp.Evaluate(`
+// 				(() => {
+// 					const remainingPlaceholders = document.querySelectorAll('img[data-nimg][src^="data:image/gif"]');
+// 					console.log('Forcing load for', remainingPlaceholders.length, 'remaining images');
+
+// 					remainingPlaceholders.forEach((img, index) => {
+// 						// Multiple aggressive strategies
+// 						img.scrollIntoView({behavior: 'auto', block: 'center'});
+// 						img.loading = 'eager';
+
+// 						// Try to trigger intersection observer
+// 						const rect = img.getBoundingClientRect();
+// 						window.scrollTo(0, window.pageYOffset + rect.top - window.innerHeight/2);
+
+// 						// Dispatch events
+// 						img.dispatchEvent(new Event('load'));
+// 						img.dispatchEvent(new Event('scroll'));
+// 					});
+
+// 					// Global triggers
+// 					window.dispatchEvent(new Event('scroll'));
+// 					window.dispatchEvent(new Event('resize'));
+// 					window.dispatchEvent(new Event('load'));
+// 				})();
+// 			`, nil).Do(ctx)
+
+// 			time.Sleep(500 * time.Millisecond)
+// 		}
+
+// 		// Final report
+// 		var finalStats map[string]interface{}
+// 		chromedp.Evaluate(`
+// 			(() => {
+// 				const allImages = document.querySelectorAll('.infinite-scroll-component img[data-nimg]');
+// 				const stats = {
+// 					total: allImages.length,
+// 					loaded: 0,
+// 					placeholder: 0
+// 				};
+
+// 				allImages.forEach(img => {
+// 					if (img.src.startsWith('data:image/gif')) {
+// 						stats.placeholder++;
+// 					} else if (img.src.startsWith('http')) {
+// 						stats.loaded++;
+// 					}
+// 				});
+
+// 				return stats;
+// 			})();
+// 		`, &finalStats).Do(ctx)
+
+// 		if finalStats != nil {
+// 			loaded := int(finalStats["loaded"].(float64))
+// 			total := int(finalStats["total"].(float64))
+// 			placeholder := int(finalStats["placeholder"].(float64))
+
+// 			successRate := float64(loaded) / float64(total) * 100
+// 			log.Printf("FINAL RESULT: %.1f%% success rate (%d/%d loaded, %d failed)\n", successRate, loaded, total, placeholder)
+
+// 			if placeholder > 0 {
+// 				log.Printf("WARNING: %d images still have placeholder sources\n", placeholder)
+// 			}
+// 		}
+
+// 		return nil
+// 	})
+// }
+
+// // Load images for a single article with maximum persistence
+// func (h *HackerNoonScraper) loadImagesForSingleArticle(articleIndex int) chromedp.Action {
+// 	return chromedp.ActionFunc(func(ctx context.Context) error {
+// 		// Get image count for this article
+// 		var imageCount int
+// 		err := chromedp.Evaluate(fmt.Sprintf(`
+// 			(() => {
+// 				const article = document.querySelectorAll('.infinite-scroll-component article')[%d];
+// 				if (!article) return 0;
+// 				return article.querySelectorAll('img[data-nimg]').length;
+// 			})();
+// 		`, articleIndex), &imageCount).Do(ctx)
+
+// 		if err != nil || imageCount == 0 {
+// 			return nil // Skip if no images or error
+// 		}
+
+// 		log.Printf("Article %d has %d images to load\n", articleIndex+1, imageCount)
+
+// 		// Scroll article into view first
+// 		err = chromedp.Evaluate(fmt.Sprintf(`
+// 			(() => {
+// 				const article = document.querySelectorAll('.infinite-scroll-component article')[%d];
+// 				if (article) {
+// 					article.scrollIntoView({behavior: 'auto', block: 'center'});
+// 				}
+// 			})();
+// 		`, articleIndex), nil).Do(ctx)
+// 		if err != nil {
+// 			return err
+// 		}
+
+// 		time.Sleep(500 * time.Millisecond)
+
+// 		// Now wait for each image in this article to load
+// 		maxAttempts := 30 // 15 seconds max per article
+// 		for attempt := 0; attempt < maxAttempts; attempt++ {
+// 			var articleStats map[string]interface{}
+// 			err = chromedp.Evaluate(fmt.Sprintf(`
+// 				(() => {
+// 					const article = document.querySelectorAll('.infinite-scroll-component article')[%d];
+// 					if (!article) return {total: 0, loaded: 0, placeholder: 0};
+
+// 					const articleImages = article.querySelectorAll('img[data-nimg]');
+// 					const stats = {
+// 						total: articleImages.length,
+// 						loaded: 0,
+// 						placeholder: 0
+// 					};
+
+// 					articleImages.forEach(img => {
+// 						if (img.src.startsWith('data:image/gif')) {
+// 							stats.placeholder++;
+// 						} else if (img.src.startsWith('http')) {
+// 							stats.loaded++;
+// 						}
+// 					});
+
+// 					return stats;
+// 				})();
+// 			`, articleIndex), &articleStats).Do(ctx)
+
+// 			if err == nil {
+// 				loaded := int(articleStats["loaded"].(float64))
+// 				placeholder := int(articleStats["placeholder"].(float64))
+// 				total := int(articleStats["total"].(float64))
+
+// 				if total > 0 {
+// 					if placeholder == 0 {
+// 						log.Printf("Article %d: ALL images loaded (%d/%d)\n", articleIndex+1, loaded, total)
+// 						break
+// 					} else {
+// 						log.Printf("Article %d progress: %d/%d loaded, %d remaining\n", articleIndex+1, loaded, total, placeholder)
+// 					}
+// 				}
+// 			}
+
+// 			// Aggressively load remaining images in this article
+// 			chromedp.Evaluate(fmt.Sprintf(`
+// 				(() => {
+// 					const article = document.querySelectorAll('.infinite-scroll-component article')[%d];
+// 					if (!article) return;
+
+// 					const placeholderImgs = article.querySelectorAll('img[data-nimg][src^="data:image/gif"]');
+// 					placeholderImgs.forEach((img, imgIndex) => {
+// 						// Multiple loading strategies
+// 						img.scrollIntoView({behavior: 'auto', block: 'center'});
+// 						img.loading = 'eager';
+
+// 						// Force intersection
+// 						const rect = img.getBoundingClientRect();
+// 						if (rect.top < window.innerHeight && rect.bottom > 0) {
+// 							img.dispatchEvent(new Event('load'));
+// 						}
+// 					});
+
+// 					// Trigger global events
+// 					window.dispatchEvent(new Event('scroll'));
+// 					window.dispatchEvent(new Event('resize'));
+// 				})();
+// 			`, articleIndex), nil).Do(ctx)
+
+// 			time.Sleep(500 * time.Millisecond)
+// 		}
+
+// 		return nil
+// 	})
+// }
+
+// BatchImageResult tracks the success of image loading for a batch
+type BatchImageResult struct {
+	BatchIndex      int
+	ArticlesInBatch []int
+	LoadedImages    int
+	FailedImages    int
+	Success         bool
+}
+
+func (h *HackerNoonScraper) performInfiniteScrollOptimized(scrolls int, maxArticles int) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
-		log.Printf("Starting infinite scroll with manual image loading...\n")
+		log.Printf("Starting optimized infinite scroll for up to %d articles...\n", maxArticles)
+
+		var failedBatches []BatchImageResult
+		var mu sync.Mutex // Protect failedBatches slice
+
+		batchIndex := 0
 
 		for i := 0; i < scrolls; i++ {
 			// Check current number of articles
-			var articleCount int
+			var currentArticleCount int
 			err := chromedp.Evaluate(`
 				document.querySelectorAll('.infinite-scroll-component article').length
-			`, &articleCount).Do(ctx)
-			if err == nil && articleCount >= maxArticles {
-				log.Printf("Found enough articles (%d), stopping scroll\n", articleCount)
+			`, &currentArticleCount).Do(ctx)
+			if err == nil && currentArticleCount >= maxArticles {
+				log.Printf("Reached target articles (%d), stopping scroll\n", currentArticleCount)
 				break
 			}
 
-			log.Printf("Before scroll %d: %d articles found\n", i+1, articleCount)
+			previousCount := currentArticleCount
+			log.Printf("Scroll %d: Starting with %d articles\n", i+1, previousCount)
 
-			// Load images for current articles
-			err = h.loadAllCurrentImages().Do(ctx)
-			if err != nil {
-				log.Printf("Error loading images: %v\n", err)
-			}
-
-			// Scroll to load more articles
+			// Perform scroll to load more articles
 			err = chromedp.Evaluate(`window.scrollTo(0, document.body.scrollHeight)`, nil).Do(ctx)
 			if err != nil {
 				return fmt.Errorf("scroll failed: %v", err)
@@ -271,153 +597,261 @@ func (h *HackerNoonScraper) performInfiniteScroll(scrolls int, maxArticles int) 
 			// Wait for new articles to load
 			time.Sleep(3 * time.Second)
 
+			// Get new article count
 			var newArticleCount int
 			chromedp.Evaluate(`
 				document.querySelectorAll('.infinite-scroll-component article').length
 			`, &newArticleCount).Do(ctx)
 
-			log.Printf("After scroll %d: %d articles found (added %d new)\n", i+1, newArticleCount, newArticleCount-articleCount)
+			newArticlesAdded := newArticleCount - previousCount
+			log.Printf("Scroll %d: Loaded %d new articles (total: %d)\n", i+1, newArticlesAdded, newArticleCount)
+
+			// If new articles were added, load their images immediately
+			if newArticlesAdded > 0 {
+				batchIndex++
+
+				// Create batch info for the newly loaded articles
+				var newArticleIndices []int
+				for idx := previousCount; idx < newArticleCount; idx++ {
+					newArticleIndices = append(newArticleIndices, idx)
+				}
+
+				log.Printf("Batch %d: Loading images for articles %d-%d (%d articles)\n",
+					batchIndex, previousCount, newArticleCount-1, newArticlesAdded)
+
+				// Load images for this batch
+				batchResult := h.loadImagesBatch(ctx, newArticleIndices, batchIndex)
+
+				// If batch failed, store it for retry later
+				if !batchResult.Success {
+					mu.Lock()
+					failedBatches = append(failedBatches, batchResult)
+					mu.Unlock()
+					log.Printf("Batch %d: Image loading incomplete, will retry after all articles loaded\n", batchIndex)
+				} else {
+					log.Printf("Batch %d: All images loaded successfully!\n", batchIndex)
+				}
+			}
+
+			// Small delay before next scroll
+			time.Sleep(1 * time.Second)
 		}
 
-		// Final image loading pass
-		log.Println("Final image loading pass...")
-		err := h.loadAllCurrentImages().Do(ctx)
+		// After all articles are loaded, retry failed batches
+		if len(failedBatches) > 0 {
+			log.Printf("\n=== RETRY PHASE ===\n")
+			log.Printf("Retrying image loading for %d failed batches...\n", len(failedBatches))
+
+			err := h.retryFailedBatches(ctx, failedBatches)
+			if err != nil {
+				log.Printf("Error during retry phase: %v\n", err)
+			}
+		}
+
+		// Final comprehensive check
+		log.Printf("\n=== FINAL VERIFICATION ===\n")
+		err := h.performFinalImageVerification(ctx)
 		if err != nil {
-			log.Printf("Error in final image loading: %v\n", err)
+			log.Printf("Error during final verification: %v\n", err)
 		}
 
 		return nil
 	})
 }
 
-// Load all images currently on the page with 100% reliability
-func (h *HackerNoonScraper) loadAllCurrentImages() chromedp.Action {
-	return chromedp.ActionFunc(func(ctx context.Context) error {
-		log.Println("Loading all current images with 100% reliability...")
+// Load images for a specific batch of articles
+func (h *HackerNoonScraper) loadImagesBatch(ctx context.Context, articleIndices []int, batchIndex int) BatchImageResult {
+	result := BatchImageResult{
+		BatchIndex:      batchIndex,
+		ArticlesInBatch: articleIndices,
+	}
 
-		// First, get total image count
-		var totalImages int
-		err := chromedp.Evaluate(`
-			(() => {
-				return document.querySelectorAll('.infinite-scroll-component img[data-nimg]').length;
-			})();
-		`, &totalImages).Do(ctx)
-		if err != nil {
-			return fmt.Errorf("error counting images: %v", err)
-		}
+	if len(articleIndices) == 0 {
+		result.Success = true
+		return result
+	}
 
-		log.Printf("Found %d total images to load\n", totalImages)
+	log.Printf("Processing batch %d with %d articles...\n", batchIndex, len(articleIndices))
 
-		// Load images in batches by article
-		var articleCount int
-		err = chromedp.Evaluate(`
-			(() => {
-				return document.querySelectorAll('.infinite-scroll-component article').length;
-			})();
-		`, &articleCount).Do(ctx)
-		if err != nil {
-			return fmt.Errorf("error counting articles: %v", err)
-		}
-
-		log.Printf("Processing %d articles for image loading\n", articleCount)
-
-		// Process each article individually for maximum reliability
-		for articleIndex := 0; articleIndex < articleCount; articleIndex++ {
-			log.Printf("Loading images for article %d/%d\n", articleIndex+1, articleCount)
-
-			// Load images for this specific article with persistence
-			err = h.loadImagesForSingleArticle(articleIndex).Do(ctx)
-			if err != nil {
-				log.Printf("Error loading images for article %d: %v\n", articleIndex+1, err)
+	// First, scroll the first article of this batch into view
+	err := chromedp.Evaluate(fmt.Sprintf(`
+		(() => {
+			const article = document.querySelectorAll('.infinite-scroll-component article')[%d];
+			if (article) {
+				article.scrollIntoView({behavior: 'auto', block: 'start'});
 			}
+		})();
+	`, articleIndices[0]), nil).Do(ctx)
+	if err != nil {
+		log.Printf("Error scrolling batch into view: %v\n", err)
+	}
 
-			// Small delay between articles to prevent overwhelming
-			time.Sleep(100 * time.Millisecond)
-		}
+	time.Sleep(500 * time.Millisecond)
 
-		// Final verification - keep trying until ALL images are loaded
-		log.Println("Final verification: ensuring 100% image loading...")
-		maxGlobalAttempts := 30 // Up to 15 seconds of additional attempts
+	// Use goroutines to process articles in parallel (with controlled concurrency)
+	var wg sync.WaitGroup
+	semaphore := make(chan struct{}, 3) // Limit to 3 concurrent articles
+	var totalLoaded, totalFailed int
+	var mu sync.Mutex
 
-		for attempt := 0; attempt < maxGlobalAttempts; attempt++ {
-			var stats map[string]interface{}
-			err = chromedp.Evaluate(`
-				(() => {
-					const allImages = document.querySelectorAll('.infinite-scroll-component img[data-nimg]');
-					const stats = {
-						total: allImages.length,
-						loaded: 0,
-						placeholder: 0
-					};
-					
-					allImages.forEach(img => {
-						if (img.src.startsWith('data:image/gif')) {
-							stats.placeholder++;
-						} else if (img.src.startsWith('http')) {
-							stats.loaded++;
-						}
-					});
-					
-					return stats;
-				})();
-			`, &stats).Do(ctx)
+	for _, articleIndex := range articleIndices {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			semaphore <- struct{}{}        // Acquire semaphore
+			defer func() { <-semaphore }() // Release semaphore
 
-			if err == nil {
-				loaded := int(stats["loaded"].(float64))
-				placeholder := int(stats["placeholder"].(float64))
-				total := int(stats["total"].(float64))
+			loaded, failed := h.loadSingleArticleImagesOptimized(ctx, idx)
 
-				log.Printf("Global verification attempt %d: %d/%d loaded, %d still placeholder\n", attempt+1, loaded, total, placeholder)
+			mu.Lock()
+			totalLoaded += loaded
+			totalFailed += failed
+			mu.Unlock()
+		}(articleIndex)
+	}
 
-				// Check if ALL images are loaded (100%)
-				if placeholder == 0 {
-					log.Printf("SUCCESS: 100%% image loading achieved! (%d/%d)\n", loaded, total)
-					break
+	wg.Wait()
+
+	result.LoadedImages = totalLoaded
+	result.FailedImages = totalFailed
+	result.Success = totalFailed == 0
+
+	log.Printf("Batch %d complete: %d images loaded, %d failed\n", batchIndex, totalLoaded, totalFailed)
+	return result
+}
+
+// Load images for a single article with optimized approach
+func (h *HackerNoonScraper) loadSingleArticleImagesOptimized(ctx context.Context, articleIndex int) (loaded, failed int) {
+	// Get image count for this article
+	var imageCount int
+	err := chromedp.Evaluate(fmt.Sprintf(`
+		(() => {
+			const article = document.querySelectorAll('.infinite-scroll-component article')[%d];
+			if (!article) return 0;
+			return article.querySelectorAll('img[data-nimg]').length;
+		})();
+	`, articleIndex), &imageCount).Do(ctx)
+
+	if err != nil || imageCount == 0 {
+		return 0, 0
+	}
+
+	// Scroll this article into view
+	chromedp.Evaluate(fmt.Sprintf(`
+		(() => {
+			const article = document.querySelectorAll('.infinite-scroll-component article')[%d];
+			if (article) {
+				article.scrollIntoView({behavior: 'auto', block: 'center'});
+			}
+		})();
+	`, articleIndex), nil).Do(ctx)
+
+	time.Sleep(200 * time.Millisecond)
+
+	// Trigger image loading for this article
+	chromedp.Evaluate(fmt.Sprintf(`
+		(() => {
+			const article = document.querySelectorAll('.infinite-scroll-component article')[%d];
+			if (!article) return;
+			
+			const images = article.querySelectorAll('img[data-nimg]');
+			images.forEach(img => {
+				img.scrollIntoView({behavior: 'auto', block: 'nearest'});
+				img.loading = 'eager';
+				img.dispatchEvent(new Event('load'));
+			});
+		})();
+	`, articleIndex), nil).Do(ctx)
+
+	// Wait a bit for images to start loading
+	time.Sleep(1 * time.Second)
+
+	// Check results - single attempt for batch processing
+	var stats map[string]interface{}
+	err = chromedp.Evaluate(fmt.Sprintf(`
+		(() => {
+			const article = document.querySelectorAll('.infinite-scroll-component article')[%d];
+			if (!article) return {total: 0, loaded: 0, placeholder: 0};
+			
+			const articleImages = article.querySelectorAll('img[data-nimg]');
+			const stats = {
+				total: articleImages.length,
+				loaded: 0,
+				placeholder: 0
+			};
+			
+			articleImages.forEach(img => {
+				if (img.src.startsWith('data:image/gif')) {
+					stats.placeholder++;
+				} else if (img.src.startsWith('http')) {
+					stats.loaded++;
 				}
+			});
+			
+			return stats;
+		})();
+	`, articleIndex), &stats).Do(ctx)
+
+	if err == nil && stats != nil {
+		loadedCount := int(stats["loaded"].(float64))
+		placeholderCount := int(stats["placeholder"].(float64))
+		return loadedCount, placeholderCount
+	}
+
+	return 0, imageCount
+}
+
+// Retry failed batches with more aggressive approach
+func (h *HackerNoonScraper) retryFailedBatches(ctx context.Context, failedBatches []BatchImageResult) error {
+	log.Printf("Starting retry phase for %d failed batches...\n", len(failedBatches))
+
+	for _, batch := range failedBatches {
+		log.Printf("Retrying batch %d (%d articles)...\n", batch.BatchIndex, len(batch.ArticlesInBatch))
+
+		// Use more aggressive loading for failed batches
+		for _, articleIndex := range batch.ArticlesInBatch {
+			err := h.aggressivelyLoadArticleImages(ctx, articleIndex)
+			if err != nil {
+				log.Printf("Error in aggressive loading for article %d: %v\n", articleIndex, err)
 			}
-
-			// Aggressively try to load remaining placeholder images
-			chromedp.Evaluate(`
-				(() => {
-					const remainingPlaceholders = document.querySelectorAll('img[data-nimg][src^="data:image/gif"]');
-					console.log('Forcing load for', remainingPlaceholders.length, 'remaining images');
-					
-					remainingPlaceholders.forEach((img, index) => {
-						// Multiple aggressive strategies
-						img.scrollIntoView({behavior: 'auto', block: 'center'});
-						img.loading = 'eager';
-						
-						// Try to trigger intersection observer
-						const rect = img.getBoundingClientRect();
-						window.scrollTo(0, window.pageYOffset + rect.top - window.innerHeight/2);
-						
-						// Dispatch events
-						img.dispatchEvent(new Event('load'));
-						img.dispatchEvent(new Event('scroll'));
-					});
-					
-					// Global triggers
-					window.dispatchEvent(new Event('scroll'));
-					window.dispatchEvent(new Event('resize'));
-					window.dispatchEvent(new Event('load'));
-				})();
-			`, nil).Do(ctx)
-
-			time.Sleep(500 * time.Millisecond)
 		}
+	}
 
-		// Final report
-		var finalStats map[string]interface{}
-		chromedp.Evaluate(`
+	return nil
+}
+
+// Aggressively load images for articles that failed in batch processing
+func (h *HackerNoonScraper) aggressivelyLoadArticleImages(ctx context.Context, articleIndex int) error {
+	maxAttempts := 10 // More focused attempts
+
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		// Scroll article into view
+		chromedp.Evaluate(fmt.Sprintf(`
 			(() => {
-				const allImages = document.querySelectorAll('.infinite-scroll-component img[data-nimg]');
+				const article = document.querySelectorAll('.infinite-scroll-component article')[%d];
+				if (article) {
+					article.scrollIntoView({behavior: 'auto', block: 'center'});
+				}
+			})();
+		`, articleIndex), nil).Do(ctx)
+
+		time.Sleep(300 * time.Millisecond)
+
+		// Check current status
+		var stats map[string]interface{}
+		err := chromedp.Evaluate(fmt.Sprintf(`
+			(() => {
+				const article = document.querySelectorAll('.infinite-scroll-component article')[%d];
+				if (!article) return {total: 0, loaded: 0, placeholder: 0};
+				
+				const articleImages = article.querySelectorAll('img[data-nimg]');
 				const stats = {
-					total: allImages.length,
+					total: articleImages.length,
 					loaded: 0,
 					placeholder: 0
 				};
 				
-				allImages.forEach(img => {
+				articleImages.forEach(img => {
 					if (img.src.startsWith('data:image/gif')) {
 						stats.placeholder++;
 					} else if (img.src.startsWith('http')) {
@@ -427,132 +861,87 @@ func (h *HackerNoonScraper) loadAllCurrentImages() chromedp.Action {
 				
 				return stats;
 			})();
-		`, &finalStats).Do(ctx)
+		`, articleIndex), &stats).Do(ctx)
 
-		if finalStats != nil {
-			loaded := int(finalStats["loaded"].(float64))
-			total := int(finalStats["total"].(float64))
-			placeholder := int(finalStats["placeholder"].(float64))
-
-			successRate := float64(loaded) / float64(total) * 100
-			log.Printf("FINAL RESULT: %.1f%% success rate (%d/%d loaded, %d failed)\n", successRate, loaded, total, placeholder)
-
-			if placeholder > 0 {
-				log.Printf("WARNING: %d images still have placeholder sources\n", placeholder)
+		if err == nil && stats != nil {
+			placeholder := int(stats["placeholder"].(float64))
+			if placeholder == 0 {
+				// All images loaded for this article
+				break
 			}
 		}
 
-		return nil
-	})
-}
-
-// Load images for a single article with maximum persistence
-func (h *HackerNoonScraper) loadImagesForSingleArticle(articleIndex int) chromedp.Action {
-	return chromedp.ActionFunc(func(ctx context.Context) error {
-		// Get image count for this article
-		var imageCount int
-		err := chromedp.Evaluate(fmt.Sprintf(`
+		// Aggressively trigger loading
+		chromedp.Evaluate(fmt.Sprintf(`
 			(() => {
 				const article = document.querySelectorAll('.infinite-scroll-component article')[%d];
-				if (!article) return 0;
-				return article.querySelectorAll('img[data-nimg]').length;
-			})();
-		`, articleIndex), &imageCount).Do(ctx)
-
-		if err != nil || imageCount == 0 {
-			return nil // Skip if no images or error
-		}
-
-		log.Printf("Article %d has %d images to load\n", articleIndex+1, imageCount)
-
-		// Scroll article into view first
-		err = chromedp.Evaluate(fmt.Sprintf(`
-			(() => {
-				const article = document.querySelectorAll('.infinite-scroll-component article')[%d];
-				if (article) {
-					article.scrollIntoView({behavior: 'auto', block: 'center'});
-				}
+				if (!article) return;
+				
+				const placeholderImgs = article.querySelectorAll('img[data-nimg][src^="data:image/gif"]');
+				placeholderImgs.forEach(img => {
+					img.scrollIntoView({behavior: 'auto', block: 'center'});
+					img.loading = 'eager';
+					img.dispatchEvent(new Event('load'));
+					img.dispatchEvent(new Event('scroll'));
+				});
+				
+				window.dispatchEvent(new Event('scroll'));
+				window.dispatchEvent(new Event('resize'));
 			})();
 		`, articleIndex), nil).Do(ctx)
-		if err != nil {
-			return err
-		}
 
 		time.Sleep(500 * time.Millisecond)
+	}
 
-		// Now wait for each image in this article to load
-		maxAttempts := 30 // 15 seconds max per article
-		for attempt := 0; attempt < maxAttempts; attempt++ {
-			var articleStats map[string]interface{}
-			err = chromedp.Evaluate(fmt.Sprintf(`
-				(() => {
-					const article = document.querySelectorAll('.infinite-scroll-component article')[%d];
-					if (!article) return {total: 0, loaded: 0, placeholder: 0};
-					
-					const articleImages = article.querySelectorAll('img[data-nimg]');
-					const stats = {
-						total: articleImages.length,
-						loaded: 0,
-						placeholder: 0
-					};
-					
-					articleImages.forEach(img => {
-						if (img.src.startsWith('data:image/gif')) {
-							stats.placeholder++;
-						} else if (img.src.startsWith('http')) {
-							stats.loaded++;
-						}
-					});
-					
-					return stats;
-				})();
-			`, articleIndex), &articleStats).Do(ctx)
+	return nil
+}
 
-			if err == nil {
-				loaded := int(articleStats["loaded"].(float64))
-				placeholder := int(articleStats["placeholder"].(float64))
-				total := int(articleStats["total"].(float64))
+// Perform final verification of all images
+func (h *HackerNoonScraper) performFinalImageVerification(ctx context.Context) error {
+	log.Println("Performing final comprehensive image verification...")
 
-				if total > 0 {
-					if placeholder == 0 {
-						log.Printf("Article %d: ALL images loaded (%d/%d)\n", articleIndex+1, loaded, total)
-						break
-					} else {
-						log.Printf("Article %d progress: %d/%d loaded, %d remaining\n", articleIndex+1, loaded, total, placeholder)
-					}
+	var finalStats map[string]interface{}
+	err := chromedp.Evaluate(`
+		(() => {
+			const allImages = document.querySelectorAll('.infinite-scroll-component img[data-nimg]');
+			const stats = {
+				total: allImages.length,
+				loaded: 0,
+				placeholder: 0
+			};
+			
+			allImages.forEach(img => {
+				if (img.src.startsWith('data:image/gif')) {
+					stats.placeholder++;
+				} else if (img.src.startsWith('http')) {
+					stats.loaded++;
 				}
-			}
+			});
+			
+			return stats;
+		})();
+	`, &finalStats).Do(ctx)
 
-			// Aggressively load remaining images in this article
-			chromedp.Evaluate(fmt.Sprintf(`
-				(() => {
-					const article = document.querySelectorAll('.infinite-scroll-component article')[%d];
-					if (!article) return;
-					
-					const placeholderImgs = article.querySelectorAll('img[data-nimg][src^="data:image/gif"]');
-					placeholderImgs.forEach((img, imgIndex) => {
-						// Multiple loading strategies
-						img.scrollIntoView({behavior: 'auto', block: 'center'});
-						img.loading = 'eager';
-						
-						// Force intersection
-						const rect = img.getBoundingClientRect();
-						if (rect.top < window.innerHeight && rect.bottom > 0) {
-							img.dispatchEvent(new Event('load'));
-						}
-					});
-					
-					// Trigger global events
-					window.dispatchEvent(new Event('scroll'));
-					window.dispatchEvent(new Event('resize'));
-				})();
-			`, articleIndex), nil).Do(ctx)
+	if err == nil && finalStats != nil {
+		loaded := int(finalStats["loaded"].(float64))
+		total := int(finalStats["total"].(float64))
+		placeholder := int(finalStats["placeholder"].(float64))
 
-			time.Sleep(500 * time.Millisecond)
+		successRate := float64(loaded) / float64(total) * 100
+		log.Printf("FINAL RESULTS:\n")
+		log.Printf("  Total images: %d\n", total)
+		log.Printf("  Successfully loaded: %d\n", loaded)
+		log.Printf("  Still placeholder: %d\n", placeholder)
+		log.Printf("  Success rate: %.1f%%\n", successRate)
+
+		if placeholder > 0 {
+			log.Printf("WARNING: %d images still have placeholder sources\n", placeholder)
+		} else {
+			log.Printf("SUCCESS: All images loaded successfully!\n")
 		}
+	}
 
-		return nil
-	})
+	return nil
 }
 
 func (h *HackerNoonScraper) Close() {
@@ -638,9 +1027,14 @@ func init() {
 
 	go func() {
 		time.Sleep(15 * time.Second)
-		ScrapeHackerNoonBitcoinArticles(200, 24)
+		start := time.Now()
+		// ScrapeHackerNoonBitcoinArticles(200, 24)
 		// ScrapeHackerNoonBitcoinArticles(2000, 500)
-		// ScrapeHackerNoonBitcoinArticles(10000, 500)
+		ScrapeHackerNoonBitcoinArticles(6500, 500)
+		fmt.Printf(
+			"Total Scraping Duration : %s\n",
+			time.Since(start),
+		)
 	}()
 
 	// log.Println("App initialized. Scheduling ScrapeHackerNoonBitcoinArticles() to run in  2 minutes...")
