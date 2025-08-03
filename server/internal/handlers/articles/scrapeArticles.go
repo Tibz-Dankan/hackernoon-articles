@@ -1022,28 +1022,28 @@ func ScrapeHackerNoonBitcoinArticlesOnly(maxArticles, scrolls int) ([]ScrapedArt
 	return scraper.ScrapeBitcoinArticles(maxArticles, scrolls)
 }
 
-func init() {
-	log.Println("App initialized. Scheduling ScrapeHackerNoonBitcoinArticles() to run in 15 seconds...")
+// func init() {
+// 	log.Println("App initialized. Scheduling ScrapeHackerNoonBitcoinArticles() to run in 15 seconds...")
 
-	go func() {
-		time.Sleep(15 * time.Second)
-		start := time.Now()
-		// ScrapeHackerNoonBitcoinArticles(200, 24)
-		// ScrapeHackerNoonBitcoinArticles(2000, 500)
-		ScrapeHackerNoonBitcoinArticles(6500, 500)
-		fmt.Printf(
-			"Total Scraping Duration : %s\n",
-			time.Since(start),
-		)
-	}()
+// 	go func() {
+// 		time.Sleep(15 * time.Second)
+// 		start := time.Now()
+// 		ScrapeHackerNoonBitcoinArticles(200, 15)
+// 		// ScrapeHackerNoonBitcoinArticles(2000, 120)
+// 		// ScrapeHackerNoonBitcoinArticles(6500, 250)
+// 		fmt.Printf(
+// 			"Total Scraping Duration : %s\n",
+// 			time.Since(start),
+// 		)
+// 	}()
 
-	// log.Println("App initialized. Scheduling ScrapeHackerNoonBitcoinArticles() to run in  2 minutes...")
+// 	// log.Println("App initialized. Scheduling ScrapeHackerNoonBitcoinArticles() to run in  2 minutes...")
 
-	// go func() {
-	// 	time.Sleep(2 * time.Minute)
-	// 	ScrapeHackerNoonBitcoinArticles(200, 24)
-	// }()
-}
+// 	// go func() {
+// 	// 	time.Sleep(2 * time.Minute)
+// 	// 	ScrapeHackerNoonBitcoinArticles(200, 24)
+// 	// }()
+// }
 
 // func init() {
 // 	fmt.Println("App initialized. Scheduling ScrapeHackerNoonBitcoinArticles() to run daily at 6pm EAT...")
