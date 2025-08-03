@@ -21,7 +21,7 @@ type ScrapedData struct {
 }
 
 func ProcessArticles() error {
-	filename, err := filepath.Abs("./20250802-184552-hackernoon-bitcoin-articles.json")
+	filename, err := filepath.Abs("./20250802-213734-hn-bitcoin-articles.json")
 	if err != nil {
 		log.Println("Error finding absolute path:", err)
 	}
