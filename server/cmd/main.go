@@ -48,6 +48,7 @@ func main() {
 		return c.Next()
 	})
 	userGroup.Get("/", articles.GetAllArticles)
+	userGroup.Get("/search", articles.SearchArticles)
 
 	// uploads
 	uploadGroup := app.Group("/api/v0.1/uploads", func(c *fiber.Ctx) error {
