@@ -27,7 +27,7 @@ type GetAllArticles = {
   limit: number;
   articleIDCursor?: string;
   dateCursor?: string;
-  offset?: number;
+  offset?: string;
 };
 
 type SearchArticles = {

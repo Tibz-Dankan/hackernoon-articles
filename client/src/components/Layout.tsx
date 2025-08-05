@@ -19,7 +19,7 @@ export const Layout: React.FC<LayoutProps> = (props) => {
       }}
     >
       <Header />
-      <main className="px-4 sm:px-16 lg:px-28">{props.children}</main>
+      <main className="px-4 sm:px-16 lg:px-20">{props.children}</main>
       <Footer />
     </div>
   );

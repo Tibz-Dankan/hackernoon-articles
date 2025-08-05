@@ -29,7 +29,7 @@ export const Home: React.FC = () => {
         limit: 20,
         articleIDCursor: !!articleIDCursor ? articleIDCursor : "",
         dateCursor: !!dateCursor ? dateCursor : "",
-        // offset:  0,
+        offset: "",
       });
     },
   });
