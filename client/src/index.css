@@ -17,8 +17,8 @@
   /* --clr-background: oklch(18.07% 0.036 278.77); */
   --clr-background: oklch(24.57% 0.014 271.5);
   /* oklch(24.57% 0.014 271.50) */
-
-  --clr-primary: oklch(87.87% 0.233 142.47);
+  /* --clr-primary: oklch(87.87% 0.233 142.47); */
+  --clr-primary: oklch(45.89% 0.103 164.36);
 }
 
 body {
