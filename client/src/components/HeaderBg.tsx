@@ -26,12 +26,22 @@ export const HeaderBg: React.FC<HeaderBgProps> = ({ children }) => {
     if (!ctx) return;
 
     let width: number, height: number;
-    const colors = ["#7e88c3", "#4dabf7", "#3bc9db", "#748ffc"];
+    // const colors = ["#f7931a", "#ff9500", "#00d4aa", "#22c55e"];
+    const colors = ["#f7931a", "#f76707", "#00d4aa", "#22c55e"];
+
     const waves: Wave[] = [];
 
     const resizeCanvas = () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      const dpr = window.devicePixelRatio || 1;
+      width = window.innerWidth;
+      height = 60;
+
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + "px";
+      canvas.style.height = height + "px";
+
+      ctx.scale(dpr, dpr);
     };
 
     resizeCanvas();
@@ -41,9 +51,9 @@ export const HeaderBg: React.FC<HeaderBgProps> = ({ children }) => {
       colors.forEach((color) => {
         waves.push({
           color,
-          baseAmplitude: 50 + Math.random() * 100,
-          amplitudeOffset: Math.random() * 20,
-          wavelength: 0.005 + Math.random() * 0.01,
+          baseAmplitude: 10 + Math.random() * 20,
+          amplitudeOffset: Math.random() * 5,
+          wavelength: (0.005 + Math.random() * 0.01) * 0.75,
           speed: 0.1 + Math.random() * 0.2,
           phase: Math.random() * Math.PI * 2,
           oscillationSpeed: 0.01 + Math.random() * 0.03,
@@ -100,15 +110,18 @@ export const HeaderBg: React.FC<HeaderBgProps> = ({ children }) => {
   }, []);
 
   return (
-    <header
-      className=" w-full h-16  relative flex items-center
-      justify-center"
-    >
+    <header className="w-full h-16 relative flex items-center justify-center">
       <canvas
         ref={canvasRef}
-        className="w-full h-full absolute top-0  left-0 z-[1]"
+        className="w-full h-full absolute top-0 left-0 z-[1]"
+        style={{ willChange: "transform" }}
       />
-      <div className="z-10">{children}</div>
+      <div
+        className="w-full h-full z-10 bg-[rgba(0,0,0,0.25)]
+         flex items-center justify-center"
+      >
+        {children}
+      </div>
     </header>
   );
 };
