@@ -41,7 +41,10 @@ func (a *Article) FindByTitle(title string) (Article, error) {
 func (a *Article) FindAll(limit float64, cursor string) ([]Article, int64, error) {
 	var articles []Article
 	var count int64
-	query := db.Preload("Author").Order("\"updatedAt\" DESC").Limit(int(limit))
+	query := db.Model(&Article{}).
+		// Preload("Author").
+		Order("\"updatedAt\" DESC").
+		Limit(int(limit))
 
 	if cursor != "" {
 		var lastArticle Article
