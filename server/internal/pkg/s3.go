@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -71,6 +72,11 @@ func (s3c *S3Client) NewS3Client(ctx context.Context) (*S3Client, error) {
 
 func (s3c *S3Client) UploadFile(ctx context.Context, file io.Reader, originalFilename string, contentType string, fileSize int64) (*UploadResponse, error) {
 	ext := filepath.Ext(originalFilename)
+
+	if queryIndex := strings.Index(ext, "?"); queryIndex != -1 {
+		ext = ext[:queryIndex]
+	}
+
 	uniqueID := uuid.New().String()
 	filename := fmt.Sprintf("%s%s", uniqueID, ext)
 

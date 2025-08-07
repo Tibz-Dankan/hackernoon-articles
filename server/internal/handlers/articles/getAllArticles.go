@@ -29,13 +29,13 @@ var GetAllArticles = func(c *fiber.Ctx) error {
 	var parsedDateCursorParam time.Time
 	var offset int
 
+	log.Printf("dateCursorParam: %v\n", dateCursorParam)
 	if dateCursorParam != "" {
 		parsedDateCursorParam, err := time.Parse(time.RFC3339, dateCursorParam)
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, "Invalid offset format! Must be an ISO 8601 string.")
 		}
 		log.Printf("parsedDateCursorParam: %v\n", parsedDateCursorParam)
-
 	}
 
 	if offsetParam != "" {

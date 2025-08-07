@@ -1028,7 +1028,8 @@ func ScrapeHackerNoonBitcoinArticlesOnly(maxArticles, scrolls int) ([]ScrapedArt
 // 	go func() {
 // 		time.Sleep(15 * time.Second)
 // 		start := time.Now()
-// 		ScrapeHackerNoonBitcoinArticles(200, 15)
+// 		ScrapeHackerNoonBitcoinArticles(20, 5)
+// 		// ScrapeHackerNoonBitcoinArticles(200, 15)
 // 		// ScrapeHackerNoonBitcoinArticles(2000, 120)
 // 		// ScrapeHackerNoonBitcoinArticles(6500, 250)
 // 		fmt.Printf(
