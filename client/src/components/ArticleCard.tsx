@@ -20,9 +20,10 @@ export const ArticleCard: React.FC<ArticleCardProp> = (props) => {
           rel="noopener noreferrer"
         >
           <img
-            src={url}
+            src={props.article.imageUrl}
             alt={props.article.title}
-            className="w-full h-52 object-cover object-center rounded-lg mx-auto"
+            className="w-full h-52 object-cover object-center rounded-lg mx-auto
+            bg-(--clr-background)"
           />
         </Link>
         <div
@@ -65,6 +66,3 @@ export const ArticleCard: React.FC<ArticleCardProp> = (props) => {
     </div>
   );
 };
-
-const url =
-  "https://hackernoon.imgix.net/images/EHUYZRLLAUbgArGtd43kEIxTOTS2-cx03el1.jpeg?auto=format\u0026fit=max\u0026w=3840";
