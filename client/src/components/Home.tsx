@@ -96,13 +96,13 @@ export const Home: React.FC = () => {
 
   return (
     <Layout>
-      <div className="flex flex-col gap-8">
+      <div className="w-full flex flex-col items-center gap-8">
         <form
           onSubmit={formik.handleSubmit}
-          className="flex flex-col items-center gap-2 text-gray-200 self-center"
+          className="w-full flex flex-col items-center gap-2 text-gray-200 self-center"
         >
           <div
-            className="flex items-center justify-center gap-2 text-base
+            className="w-full flex items-center justify-center gap-2 text-base
             text-gray-400"
           >
             <span>
@@ -110,17 +110,19 @@ export const Home: React.FC = () => {
             </span>
             <span>Time Travel to Our Bitcoin Articles of</span>
           </div>
-          <div className="flex items-center justify-center gap-2">
-            <InputField
-              name={"timeTravelBitcoin"}
-              type={"date"}
-              formik={formik}
-            />
+          <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-2">
+            <div className="w-full sm:w-auto">
+              <InputField
+                name={"timeTravelBitcoin"}
+                type={"date"}
+                formik={formik}
+              />
+            </div>
             <Button
               label={
                 <>
                   {!isPending && (
-                    <div className="flex items-center justify-center gap-2 ">
+                    <div className="flex items-center justify-center gap-2">
                       <span>Submit</span>
                     </div>
                   )}
@@ -134,7 +136,7 @@ export const Home: React.FC = () => {
               }
               type={"submit"}
               disabled={isPending}
-              className="min-w-40"
+              className="min-w-40 w-full sm:w-auto"
             />
           </div>
         </form>
