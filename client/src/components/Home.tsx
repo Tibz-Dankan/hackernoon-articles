@@ -27,7 +27,7 @@ export const Home: React.FC = () => {
     queryKey: [`articles-${articleIDCursor}-${dateCursor}-${offset}`],
     queryFn: () => {
       return article.getAll({
-        limit: 20,
+        limit: 18,
         articleIDCursor: !!articleIDCursor ? articleIDCursor : "",
         dateCursor: !!dateCursor ? dateCursor : "",
         offset: "",
