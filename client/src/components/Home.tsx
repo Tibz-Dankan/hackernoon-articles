@@ -105,10 +105,12 @@ export const Home: React.FC = () => {
             className="w-full flex items-center justify-center gap-2 text-base
             text-gray-400"
           >
-            <span>
+            <span className="hidden sm:block">
               <RotateCcw size={20} />
             </span>
-            <span>Time Travel to Our Bitcoin Articles of</span>
+            <span className="text-center">
+              Time Travel to Our Bitcoin Articles of
+            </span>
           </div>
           <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-2">
             <div className="w-full sm:w-auto">
