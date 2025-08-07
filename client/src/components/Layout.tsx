@@ -18,8 +18,8 @@ export const Layout: React.FC<LayoutProps> = (props) => {
     >
       <Header />
       <main
-        className="flex-1 flex items-center justify-center w-full
-         h-full px-4 sm:px-16 lg:px-20"
+        className="flex items-center justify-center w-full
+         h-full px-4 sm:px-16 lg:px-20 bg-green-600x mr-4 sm:mr-0"
       >
         {props.children}
       </main>
