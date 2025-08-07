@@ -21,8 +21,6 @@ func SaveScrapedArticles() {
 
 		s3Client := pkg.S3Client{}
 
-		// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-		// defer cancel()
 		ctx := context.Background()
 
 		newS3Client, err := s3Client.NewS3Client(ctx)
@@ -107,6 +105,7 @@ func SaveScrapedArticles() {
 			article.AuthorID = articleAuthor.ID
 			article.Tag = scrapedArticle.Tag
 			article.Title = scrapedArticle.Title
+			article.Href = scrapedArticle.URL
 			article.PostedAt = scrapedArticle.PostedAt
 			article.ReadDuration = scrapedArticle.ReadDuration
 			article.ImageFilename = "ImageFilename.jpeg"

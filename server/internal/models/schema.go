@@ -11,6 +11,7 @@ type Article struct {
 	AuthorID      string    `gorm:"column:authorID;not null;index" json:"authorID"`
 	Tag           string    `gorm:"column:tag;not null;index" json:"tag"`
 	Title         string    `gorm:"column:title;not null;index" json:"title"`
+	Href          string    `gorm:"column:href;default:null" json:"href"`
 	ImageUrl      string    `gorm:"column:imageUrl;not null" json:"imageUrl"`
 	ImageFilename string    `gorm:"column:imageFilename;default:null" json:"imageFilename"`
 	PostedAt      time.Time `gorm:"column:postedAt;index" json:"postedAt"`
