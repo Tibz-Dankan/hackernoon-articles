@@ -7,9 +7,11 @@ import (
 	"os"
 	"path/filepath"
 
-	// "time"
+	"time"
 
+	"github.com/Tibz-Dankan/hackernoon-articles/internal/constants"
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/events"
+	"github.com/Tibz-Dankan/hackernoon-articles/internal/models"
 )
 
 type ScrapedData struct {
@@ -21,8 +23,6 @@ type ScrapedData struct {
 }
 
 func ProcessArticles() error {
-
-	// filename, err := filepath.Abs("./20250802-213734-hn-bitcoin-articles.json")
 	filename, err := filepath.Abs("./20250810-114840-hackernoon-bitcoin-articles.json")
 	if err != nil {
 		log.Println("Error finding absolute path:", err)
@@ -46,6 +46,44 @@ func ProcessArticles() error {
 	return nil
 }
 
+func ProcessArticlesWithoutImages() error {
+	article := models.Article{}
+	// filename, err := filepath.Abs("./20250807-015111-hackernoon-bitcoin-articles.json")
+	filename, err := filepath.Abs("./20250803-004514-hn-bitcoin-articles.json")
+	if err != nil {
+		log.Println("Error finding absolute path:", err)
+	}
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		log.Fatalf("Error reading file: %v", err)
+	}
+
+	var scrapedData ScrapedData
+	err = json.Unmarshal(data, &scrapedData)
+	if err != nil {
+		log.Fatalf("Error parsing JSON: %v", err)
+	}
+	fmt.Printf("Successfully loaded %d articles from %s\n\n", len(scrapedData.Articles), filename)
+
+	for _, currArticle := range scrapedData.Articles {
+		if currArticle.ImageUrl == "" && currArticle.AuthorName != "" && currArticle.Title != "" {
+
+			savedArticle, err := article.FindByTitle(currArticle.Title)
+			if err != nil && err.Error() != constants.RECORD_NOT_FOUND_ERROR {
+				log.Printf("Error finding the saved article: %v", err)
+				continue
+			}
+			if savedArticle.ID != "" {
+				log.Printf("Article is already saved: %s ", savedArticle.Title)
+				continue
+			}
+
+			events.EB.Publish("SCRAPE_SINGLE_ARTICLE", currArticle)
+		}
+	}
+	return nil
+}
+
 // func init() {
 // 	log.Println("App initialized. Scheduling ProcessArticles() to run in 15 seconds...")
 
@@ -54,3 +92,12 @@ func ProcessArticles() error {
 // 		ProcessArticles()
 // 	}()
 // }
+
+func init() {
+	log.Println("App initialized. Scheduling ProcessArticlesWithoutImages() to run in 15 seconds...")
+
+	go func() {
+		time.Sleep(15 * time.Second)
+		ProcessArticlesWithoutImages()
+	}()
+}
