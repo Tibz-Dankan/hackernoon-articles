@@ -12,8 +12,7 @@ import (
 func UpdateArticleLink() {
 	article := models.Article{}
 
-	filename, err := filepath.Abs("./20250802-213734-hn-bitcoin-articles.json")
-	// filename, err := filepath.Abs("./20250807-125125-hackernoon-bitcoin-articles.json")
+	filename, err := filepath.Abs("./20250803-004514-hn-bitcoin-articles.json")
 	if err != nil {
 		log.Println("Error finding absolute path:", err)
 	}
@@ -36,7 +35,7 @@ func UpdateArticleLink() {
 
 	for _, currArticle := range articles {
 		if currArticle.Href != "" {
-			log.Printf("Article : %s has correct ImageURL", currArticle.Title)
+			log.Printf("Article : %s has correct link", currArticle.Title)
 			continue
 		}
 		var scrapedArticleURL string
