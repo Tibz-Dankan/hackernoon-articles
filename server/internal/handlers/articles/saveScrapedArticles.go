@@ -47,7 +47,7 @@ func SaveScrapedArticles() {
 				continue
 			}
 			if savedArticle.ID != "" {
-				log.Printf("Article is ready saved: %s ", scrapedArticle.Title)
+				log.Printf("Article is already saved: %s ", scrapedArticle.Title)
 				continue
 			}
 
@@ -150,7 +150,7 @@ func SaveScrapedArticles() {
 				log.Println("Error creating article : ", err)
 				continue
 			}
-			log.Println("Successfully createdArticle: ", createdArticle.Title)
+			log.Println("Successfully created Article: ", createdArticle.Title)
 		}
 	}()
 }
