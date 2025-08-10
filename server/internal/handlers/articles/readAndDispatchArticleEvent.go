@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"time"
+	// "time"
 
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/events"
 )
@@ -46,11 +46,11 @@ func ProcessArticles() error {
 	return nil
 }
 
-func init() {
-	log.Println("App initialized. Scheduling ProcessArticles() to run in 15 seconds...")
+// func init() {
+// 	log.Println("App initialized. Scheduling ProcessArticles() to run in 15 seconds...")
 
-	go func() {
-		time.Sleep(15 * time.Second)
-		ProcessArticles()
-	}()
-}
+// 	go func() {
+// 		time.Sleep(15 * time.Second)
+// 		ProcessArticles()
+// 	}()
+// }
