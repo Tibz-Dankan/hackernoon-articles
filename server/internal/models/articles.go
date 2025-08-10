@@ -98,6 +98,28 @@ func (a *Article) FindAllByPostedAt(limit int, articleIDCursor string,
 	return articles, count, nil
 }
 
+func (a *Article) FindAllWithWrongImage(limit float64, cursor string) ([]Article, int64, error) {
+	var articles []Article
+	query := db.Model(&Article{}).
+		Order("\"postedAt\" DESC").
+		Limit(int(limit))
+
+	wrongFormat := "?auto"
+
+	query = query.Where("\"imageUrl\" ILIKE ?", "%"+wrongFormat+"%")
+
+	var count int64
+	if err := query.Count(&count).Error; err != nil {
+		return nil, 0, err
+	}
+
+	if err := query.Find(&articles).Error; err != nil {
+		return articles, 0, err
+	}
+
+	return articles, count, nil
+}
+
 func (a *Article) Search(searchQuery, articleIDCursor string,
 	dateCursor time.Time, limit int, offset int) ([]Article, int64, error) {
 	var articles []Article
