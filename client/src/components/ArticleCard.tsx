@@ -24,6 +24,8 @@ export const ArticleCard: React.FC<ArticleCardProp> = (props) => {
             alt={props.article.title}
             className="w-full h-52 object-cover object-center rounded-lg mx-auto
             bg-(--clr-background)"
+            loading="lazy"
+            decoding="async"
           />
         </Link>
         <div
