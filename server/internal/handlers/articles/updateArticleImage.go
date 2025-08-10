@@ -24,8 +24,7 @@ func UpdateArticleImage() {
 		log.Printf("Error creating newS3Client: %v", err)
 	}
 
-	filename, err := filepath.Abs("./20250802-213734-hn-bitcoin-articles.json")
-	// filename, err := filepath.Abs("./20250807-125125-hackernoon-bitcoin-articles.json")
+	filename, err := filepath.Abs("./20250803-004514-hn-bitcoin-articles.json")
 	if err != nil {
 		log.Println("Error finding absolute path:", err)
 	}
@@ -41,10 +40,12 @@ func UpdateArticleImage() {
 	}
 	log.Printf("Successfully loaded %d articles from %s\n\n", len(scrapedData.Articles), filename)
 
-	articles, _, err := article.FindAll(6000, "")
+	// articles, _, err := article.FindAll(6000, "")
+	articles, count, err := article.FindAllWithWrongImage(6000, "")
 	if err != nil {
 		log.Printf("Error finding articles: %v", err)
 	}
+	log.Printf("Article With Wrong Images: %v", count)
 
 	for _, currArticle := range articles {
 		if !strings.Contains(currArticle.ImageUrl, "?") {
