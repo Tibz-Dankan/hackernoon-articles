@@ -48,7 +48,6 @@ func ProcessArticles() error {
 
 func ProcessArticlesWithoutImages() error {
 	article := models.Article{}
-	// filename, err := filepath.Abs("./20250807-015111-hackernoon-bitcoin-articles.json")
 	filename, err := filepath.Abs("./20250803-004514-hn-bitcoin-articles.json")
 	if err != nil {
 		log.Println("Error finding absolute path:", err)
@@ -67,6 +66,17 @@ func ProcessArticlesWithoutImages() error {
 
 	for _, currArticle := range scrapedData.Articles {
 		if currArticle.ImageUrl == "" && currArticle.AuthorName != "" && currArticle.Title != "" {
+
+			var isBlackListed bool
+			for _, blArticle := range blackListArticles {
+				if blArticle == currArticle.Title {
+					log.Printf("BlackListed: %s", currArticle.Title)
+					isBlackListed = true
+				}
+			}
+			if isBlackListed {
+				continue
+			}
 
 			savedArticle, err := article.FindByTitle(currArticle.Title)
 			if err != nil && err.Error() != constants.RECORD_NOT_FOUND_ERROR {
@@ -100,4 +110,8 @@ func init() {
 		time.Sleep(15 * time.Second)
 		ProcessArticlesWithoutImages()
 	}()
+}
+
+var blackListArticles = []string{
+	"Decentralized Applications Will Take Cryptocurrency to the Mainstream",
 }
