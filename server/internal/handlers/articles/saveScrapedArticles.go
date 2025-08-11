@@ -61,7 +61,7 @@ func SaveScrapedArticles() {
 			if articleAuthor.ID == "" {
 				avatarImgBuf, getImgErr := imageProcessor.GetImageFromURL(scrapedArticle.AuthorAvatarUrl)
 				if getImgErr != nil {
-					log.Println("Error getting author's avatar image from url : ", err)
+					log.Println("Error getting author's avatar image from url : ", getImgErr)
 					continue
 				}
 
@@ -113,7 +113,7 @@ func SaveScrapedArticles() {
 
 			articleImgBuf, getImgErr := imageProcessor.GetImageFromURL(scrapedArticle.ImageUrl)
 			if getImgErr != nil {
-				log.Println("Error getting author's avatar image from url : ", err)
+				log.Printf("Error getting articles's image from url : %v", err)
 				continue
 			}
 
