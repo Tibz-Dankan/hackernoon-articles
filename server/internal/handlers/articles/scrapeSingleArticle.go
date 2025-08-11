@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/events"
@@ -29,6 +30,9 @@ func ScrapeSingleArticleImage(articleURL string) (string, error) {
 	defer cancel()
 
 	var imageURL string
+	var finalURL string
+	var statusCode int64
+	var pageTitle string
 
 	log.Printf("Scraping image URL from article: %s", articleURL)
 
@@ -39,6 +43,87 @@ func ScrapeSingleArticleImage(articleURL string) (string, error) {
 		// Wait for page to load
 		chromedp.WaitVisible("body", chromedp.ByQuery),
 
+		// Check the final URL after any redirects and get status code
+		chromedp.Evaluate(`window.location.href`, &finalURL),
+		chromedp.Evaluate(`
+			(() => {
+				// Try to get status from performance API
+				const entries = performance.getEntriesByType('navigation');
+				if (entries.length > 0) {
+					return entries[0].responseStatus || 200;
+				}
+				return 200; // Default to 200 if we can't determine
+			})();
+		`, &statusCode),
+
+		// Get page title to help detect 404 pages
+		chromedp.Title(&pageTitle),
+	)
+
+	if err != nil {
+		return "", fmt.Errorf("failed to navigate to article: %v", err)
+	}
+
+	// Check if URL redirected to a 404 page
+	if strings.Contains(strings.ToLower(finalURL), "/404") {
+		log.Printf("❌ Article URL redirected to 404 page: %s -> %s", articleURL, finalURL)
+		return "", fmt.Errorf("article not found - redirected to 404 page: %s", finalURL)
+	}
+
+	// Check if page title indicates a 404
+	lowerTitle := strings.ToLower(pageTitle)
+	if strings.Contains(lowerTitle, "404") ||
+		strings.Contains(lowerTitle, "not found") ||
+		strings.Contains(lowerTitle, "page not found") {
+		log.Printf("❌ Article appears to be 404 based on title: %s", pageTitle)
+		return "", fmt.Errorf("article not found - page title indicates 404: %s", pageTitle)
+	}
+
+	// Check status code (though this might not always be reliable in Chrome)
+	if statusCode >= 400 {
+		log.Printf("❌ Article returned error status code: %d", statusCode)
+		return "", fmt.Errorf("article returned error status code: %d", statusCode)
+	}
+
+	// Additional check: look for common 404 page indicators in the DOM
+	var is404Page bool
+	err = chromedp.Run(ctx,
+		chromedp.Evaluate(`
+			(() => {
+				const bodyText = document.body.innerText.toLowerCase();
+				const headingText = document.querySelector('h1, h2, h3') ? 
+					document.querySelector('h1, h2, h3').innerText.toLowerCase() : '';
+				
+				// Check for common 404 indicators
+				const indicators = ['404', 'not found', 'page not found', 'page does not exist', 'oops'];
+				
+				// Check if any indicator is prominently displayed
+				for (let indicator of indicators) {
+					if (headingText.includes(indicator) || 
+						(bodyText.includes(indicator) && bodyText.split(' ').length < 100)) {
+						return true;
+					}
+				}
+				
+				// Check for HackerNoon specific 404 patterns
+				if (document.querySelector('.error-page') || 
+					document.querySelector('[class*="404"]') ||
+					document.querySelector('[id*="404"]')) {
+					return true;
+				}
+				
+				return false;
+			})();
+		`, &is404Page),
+	)
+
+	if err == nil && is404Page {
+		log.Printf("❌ Article appears to be a 404 page based on content analysis")
+		return "", fmt.Errorf("article not found - page content indicates 404")
+	}
+
+	// Now proceed with the original image scraping logic
+	err = chromedp.Run(ctx,
 		// Wait for download button to be present (with timeout)
 		chromedp.WaitVisible(".download-button", chromedp.ByQuery),
 
@@ -65,12 +150,20 @@ func ScrapeSingleArticleImage(articleURL string) (string, error) {
 	)
 
 	if err != nil {
-		return "", fmt.Errorf("failed to scrape article image: %v", err)
+		// If we can't find the download button, it might be because this is a 404 page
+		// that loaded but doesn't have the expected content structure
+		log.Printf("❌ Failed to find download button - this might be a 404 page or invalid article: %v", err)
+		return "", fmt.Errorf("failed to scrape article image (possibly 404 or invalid article): %v", err)
 	}
 
 	if imageURL == "" {
 		log.Printf("⚠️  No image URL found in download button for article: %s", articleURL)
 		return "", fmt.Errorf("no image URL found in download button")
+	}
+
+	// Final URL comparison log
+	if finalURL != articleURL {
+		log.Printf("ℹ️  URL redirected: %s -> %s", articleURL, finalURL)
 	}
 
 	// Log the scraped image URL
@@ -93,6 +186,7 @@ func ScrapeSingleArticle() {
 				log.Printf("Invalid articleData type received: %T", scrapedArticle)
 				continue
 			}
+			// log.Printf("Article to be scraped %+v:", scrapedArticle)
 			if scrapedArticle.AuthorName == "" || scrapedArticle.Title == "" {
 				log.Printf("Article is has no title or author's name ")
 				continue
@@ -121,9 +215,9 @@ func ScrapeSingleArticle() {
 	}()
 }
 
-func init() {
-	log.Println("App initialized. initialized ScrapeSingleArticle()")
-	go func() {
-		ScrapeSingleArticle()
-	}()
-}
+// func init() {
+// 	log.Println("App initialized. initialized ScrapeSingleArticle()")
+// 	go func() {
+// 		ScrapeSingleArticle()
+// 	}()
+// }

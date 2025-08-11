@@ -88,6 +88,7 @@ func ProcessArticlesWithoutImages() error {
 				continue
 			}
 
+			log.Printf("Publishing article: %s", currArticle.Title)
 			events.EB.Publish("SCRAPE_SINGLE_ARTICLE", currArticle)
 		}
 	}
@@ -114,4 +115,5 @@ func init() {
 
 var blackListArticles = []string{
 	"Decentralized Applications Will Take Cryptocurrency to the Mainstream",
+	"What is The Bitcoin Halving and What Impact Will It Have on the Crypto Market?",
 }
