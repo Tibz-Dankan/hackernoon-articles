@@ -10,5 +10,5 @@ func InitEventSubscribers() {
 	log.Println("Initiating global event subscribers...")
 
 	go articles.SaveScrapedArticles()
-	go articles.ScrapeSingleArticle()
+	// go articles.ScrapeSingleArticle()
 }
