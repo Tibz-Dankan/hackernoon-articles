@@ -79,6 +79,11 @@ func ScrapeSingleArticleImage(articleURL string) (string, error) {
 		return "", fmt.Errorf("article not found - page title indicates 404: %s", pageTitle)
 	}
 
+	// finalURL validation
+	if articleURL != finalURL {
+		return "", fmt.Errorf("❌Invalid article - redirected to : %s", finalURL)
+	}
+
 	// Check status code (though this might not always be reliable in Chrome)
 	if statusCode >= 400 {
 		log.Printf("❌ Article returned error status code: %d", statusCode)
