@@ -104,6 +104,7 @@ func ProcessArticlesWithoutImages() error {
 // 	}()
 // }
 
+// To more into single article image selection logic
 func init() {
 	log.Println("App initialized. Scheduling ProcessArticlesWithoutImages() to run in 15 seconds...")
 
@@ -116,4 +117,31 @@ func init() {
 var blackListArticles = []string{
 	"Decentralized Applications Will Take Cryptocurrency to the Mainstream",
 	"What is The Bitcoin Halving and What Impact Will It Have on the Crypto Market?",
+	"A (Very) Basic Intro To Elliptic Curve Cryptography",
+	"How to generate a Bitcoin address — Technical address generation explanation",
+	"Top Crypto Exchange and Blockchain Companies to Watch for in Canada: 2020 Edition",
+	"Will Blockchain Produce a New Generation of Retail Algorithmic Traders?",
+	"Rising From the Ashes — A Tale of Bitcoin Crashes",
+	"Trace Mayer on Why You Must Own Your Bitcoin Private Keys",
+	"The Weaknesses of Blockchain and Decentralization",
+	"Is the Next Generation of Blockchain Technologies Already Upon Us?",
+	"An Overview of MakerDAO",
+	"The Universal Crypto Exchange APIs",
+	"Vijay Boyapati’s Bullish Case for Bitcoin",
+	"Coin Center’s Peter Van Valkenburg on Preserving the Freedom to Innovate with Public Blockchains",
+	"Jesse Powell is Building a Culture of Crypto Values at Kraken",
+	"Adam Back on a Decade of Bitcoin",
+	" Will Bitcoin enchain the world",
+	"Why are CBD & Kratom Vendors are Switching to Cryptocurrency?",
+	"Constructing Cryptocurrency Indices — Performance & Methodology",
+	"How to make money on arbitrage with cryptocurrencies",
+	"Questioning the Obsession with Blockchains and On-Chain Governance with Nic Carter",
+	"Francis Pouliot on the Network Effect of Money and Why Tokens Are Scams",
+	"Brave’s Brendan Eich on Fixing Online Advertising",
+	"Will Bitcoin enchain the world?",
+	"OTC crypto deals, part 2: Minimize your risks",
+	"What Bitcoin, Ethereum and other digital assets will become",
+	"Will We Ever Run Out of Bitcoin Wallets?",
+	"The Weaknesses of Blockchain and Decentralization.",
+	"A crypto-trader’s diary — week 13; TRON",
 }
