@@ -1,9 +1,7 @@
 package articles
 
 import (
-	"fmt"
 	"log"
-	"time"
 
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/models"
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/pkg"
@@ -37,13 +35,13 @@ func UpdateArticleTagIndex() {
 	}
 }
 
-func init() {
-	log.Println("App initialized. Scheduling UpdateArticleTagIndex() to run in 15 seconds...")
+// func init() {
+// 	log.Println("App initialized. Scheduling UpdateArticleTagIndex() to run in 15 seconds...")
 
-	go func() {
-		time.Sleep(15 * time.Second)
-		start := time.Now()
-		UpdateArticleTagIndex()
-		fmt.Printf("Total Article Tag Index Update Duration : %s\n", time.Since(start))
-	}()
-}
+// 	go func() {
+// 		time.Sleep(15 * time.Second)
+// 		start := time.Now()
+// 		UpdateArticleTagIndex()
+// 		fmt.Printf("Total Article Tag Index Update Duration : %s\n", time.Since(start))
+// 	}()
+// }

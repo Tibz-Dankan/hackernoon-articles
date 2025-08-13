@@ -114,20 +114,32 @@ func UpdateArticleImage() {
 }
 
 func UpdateArticleImageV2() {
-	article := models.Article{}
-	articles, count, err := article.FindAllWithWrongImage(6000, "")
-	if err != nil {
-		log.Printf("Error finding articles: %v", err)
-	}
-	log.Printf("Article With Wrong Images: %v", count)
+	// // Update many Articles
+	// article := models.Article{}
+	// articles, count, err := article.FindAllWithWrongImage(6000, "")
+	// if err != nil {
+	// 	log.Printf("Error finding articles: %v", err)
+	// }
+	// log.Printf("Article With Wrong Images: %v", count)
 
-	for _, currArticle := range articles {
-		if !strings.Contains(currArticle.ImageUrl, "?") {
-			log.Printf("Article : %s has correct ImageURL", currArticle.Title)
-			continue
-		}
-		events.EB.Publish("SCRAPE_SINGLE_ARTICLE_v2", currArticle)
-		log.Println("Updated Article Image Initiated: ", currArticle.Title)
+	// for _, currArticle := range articles {
+	// 	if !strings.Contains(currArticle.ImageUrl, "?") {
+	// 		log.Printf("Article : %s has correct ImageURL", currArticle.Title)
+	// 		continue
+	// 	}
+	// 	events.EB.Publish("SCRAPE_SINGLE_ARTICLE_v2", currArticle)
+	// 	log.Println("Updated Article Image Initiated: ", currArticle.Title)
+	// }
+
+	// Update one Article
+	article := models.Article{}
+	savedArticle, err := article.FindByTitle("Bitcoin Mining Could Make Our Electricity Grids Smarter")
+	if err != nil {
+		log.Printf("Error finding article: %v", err)
+	}
+	if savedArticle.ID != "" {
+		events.EB.Publish("SCRAPE_SINGLE_ARTICLE_v2", savedArticle)
+		log.Println("Updated Article Image Initiated: ", savedArticle.Title)
 	}
 }
 
