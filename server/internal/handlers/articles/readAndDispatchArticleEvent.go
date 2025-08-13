@@ -7,8 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"time"
-
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/constants"
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/events"
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/models"
@@ -104,15 +102,14 @@ func ProcessArticlesWithoutImages() error {
 // 	}()
 // }
 
-// To more into single article image selection logic
-func init() {
-	log.Println("App initialized. Scheduling ProcessArticlesWithoutImages() to run in 15 seconds...")
+// func init() {
+// 	log.Println("App initialized. Scheduling ProcessArticlesWithoutImages() to run in 15 seconds...")
 
-	go func() {
-		time.Sleep(15 * time.Second)
-		ProcessArticlesWithoutImages()
-	}()
-}
+// 	go func() {
+// 		time.Sleep(15 * time.Second)
+// 		ProcessArticlesWithoutImages()
+// 	}()
+// }
 
 var blackListArticles = []string{
 	"Decentralized Applications Will Take Cryptocurrency to the Mainstream",
