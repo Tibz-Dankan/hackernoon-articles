@@ -145,6 +145,15 @@ func SaveScrapedArticles() {
 				article.ImageFilename = uploadImageResp.Filename
 			}
 
+			articleCount, err := article.FindCount()
+			if err != nil {
+				log.Println("Error finding article count : ", err)
+			}
+			if err == nil {
+				tagIndex := pkg.BuildTag(int(articleCount) + 1)
+				article.TagIndex = tagIndex
+			}
+
 			createdArticle, err := article.Create(article)
 			if err != nil {
 				log.Println("Error creating article : ", err)
