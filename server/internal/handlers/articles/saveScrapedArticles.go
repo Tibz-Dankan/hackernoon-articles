@@ -154,3 +154,82 @@ func SaveScrapedArticles() {
 		}
 	}()
 }
+
+func SaveScrapedArticlesV2() {
+	go func() {
+		scrapedArticleChan := make(chan events.DataEvent)
+		events.EB.Subscribe("SAVE_SCRAPED_ARTICLES_V2", scrapedArticleChan)
+		article := models.Article{}
+
+		imageProcessor := pkg.ImageProcessor{}
+
+		s3Client := pkg.S3Client{}
+
+		ctx := context.Background()
+
+		newS3Client, err := s3Client.NewS3Client(ctx)
+		if err != nil {
+			log.Printf("Error creating newS3Client: %v", err)
+		}
+
+		for {
+			scrapedArticleEvent := <-scrapedArticleChan
+			scrapedArticle, ok := scrapedArticleEvent.Data.(models.Article)
+			if !ok {
+				log.Printf("Invalid articleData type received: %T", scrapedArticle)
+				continue
+			}
+			if scrapedArticle.ID == "" || scrapedArticle.Title == "" {
+				log.Printf("Article is has no title or author's id ")
+				continue
+			}
+			log.Printf("v2 Saving article in progress %s:", scrapedArticle.Title)
+
+			savedArticle, err := article.FindByTitle(scrapedArticle.Title)
+			if err != nil && err.Error() != constants.RECORD_NOT_FOUND_ERROR {
+				log.Printf("Error finding the saved article: %v", err)
+				continue
+			}
+
+			articleImgBuf, getImgErr := imageProcessor.GetImageFromURL(scrapedArticle.ImageUrl)
+			if getImgErr != nil {
+				log.Printf("Error getting articles's image from url : %v", err)
+				continue
+			}
+
+			// Upload article Image
+			if len(articleImgBuf) > 0 {
+				contentType, err := imageProcessor.GetContentTypeFromBinary(articleImgBuf)
+				if err != nil {
+					log.Println("Error getting article image content type : ", err)
+					continue
+				}
+				log.Println("Content type:", contentType)
+
+				imgFile := imageProcessor.BinaryToReader(articleImgBuf)
+
+				uploadImageResp, err := newS3Client.UploadFile(
+					ctx,
+					imgFile,
+					scrapedArticle.ImageUrl,
+					contentType,
+					0,
+				)
+
+				if err != nil {
+					log.Println("Error uploading article image to s3", err)
+				}
+
+				savedArticle.ImageUrl = uploadImageResp.URL
+				savedArticle.ImageFilename = uploadImageResp.Filename
+			}
+
+			updatedArticle, err := savedArticle.Update()
+			if err != nil {
+				log.Println("Error creating article : ", err)
+				continue
+			}
+			log.Println("Successfully updated Article: ", updatedArticle.Title)
+		}
+	}()
+}

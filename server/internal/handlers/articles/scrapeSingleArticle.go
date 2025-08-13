@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/events"
+	"github.com/Tibz-Dankan/hackernoon-articles/internal/models"
 	"github.com/chromedp/chromedp"
 )
 
@@ -220,9 +221,53 @@ func ScrapeSingleArticle() {
 	}()
 }
 
-// func init() {
-// 	log.Println("App initialized. initialized ScrapeSingleArticle()")
-// 	go func() {
-// 		ScrapeSingleArticle()
-// 	}()
-// }
+func ScrapeSingleArticleV2() {
+	go func() {
+		scrapeSingleArticleChan := make(chan events.DataEvent)
+		events.EB.Subscribe("SCRAPE_SINGLE_ARTICLE_v2", scrapeSingleArticleChan)
+
+		for {
+			start := time.Now()
+
+			scrapedArticleEvent := <-scrapeSingleArticleChan
+			savedArticle, ok := scrapedArticleEvent.Data.(models.Article)
+			if !ok {
+				log.Printf("Invalid articleData type received: %T", savedArticle)
+				continue
+			}
+			// log.Printf("Article to be scraped %+v:", scrapedArticle)
+			if savedArticle.ID == "" || savedArticle.Title == "" {
+				log.Printf("Article is has no title or author's id ")
+				continue
+			}
+			log.Printf("Scraping single article in progress %s:", savedArticle.Title)
+
+			imageURL, err := ScrapeSingleArticleImage(savedArticle.Href)
+			if err != nil {
+				log.Printf("Error scraping article: %v", err)
+				continue
+			}
+
+			savedArticle.ImageUrl = imageURL
+
+			log.Printf("scrapedArticle.ImageUrl: %s", savedArticle.ImageUrl)
+
+			events.EB.Publish("SAVE_SCRAPED_ARTICLES_V2", savedArticle)
+
+			log.Println("Successfully scraped Article Image: ", savedArticle.Title)
+
+			fmt.Printf(
+				"Total Scraping Duration : %s\n",
+				time.Since(start),
+			)
+		}
+	}()
+}
+
+func init() {
+	log.Println("App initialized. initialized ScrapeSingleArticleV2()")
+	go func() {
+		// ScrapeSingleArticle()
+		ScrapeSingleArticleV2()
+	}()
+}

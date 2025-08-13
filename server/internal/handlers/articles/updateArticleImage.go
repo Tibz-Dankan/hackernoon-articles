@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Tibz-Dankan/hackernoon-articles/internal/events"
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/models"
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/pkg"
 )
@@ -63,6 +64,7 @@ func UpdateArticleImage() {
 
 		if scrapedArticleImageURL == "" {
 			log.Printf("Article : %s has no ImageURL", currArticle.Title)
+			log.Printf("Article Image URL : %s has no ImageURL", currArticle.ImageUrl)
 			continue
 		}
 
@@ -111,13 +113,32 @@ func UpdateArticleImage() {
 	}
 }
 
+func UpdateArticleImageV2() {
+	article := models.Article{}
+	articles, count, err := article.FindAllWithWrongImage(6000, "")
+	if err != nil {
+		log.Printf("Error finding articles: %v", err)
+	}
+	log.Printf("Article With Wrong Images: %v", count)
+
+	for _, currArticle := range articles {
+		if !strings.Contains(currArticle.ImageUrl, "?") {
+			log.Printf("Article : %s has correct ImageURL", currArticle.Title)
+			continue
+		}
+		events.EB.Publish("SCRAPE_SINGLE_ARTICLE_v2", currArticle)
+		log.Println("Updated Article Image Initiated: ", currArticle.Title)
+	}
+}
+
 // func init() {
-// 	log.Println("App initialized. Scheduling UpdateArticleImage() to run in 15 seconds...")
+// 	log.Println("App initialized. Scheduling UpdateArticleImageV2() to run in 15 seconds...")
 
 // 	go func() {
 // 		time.Sleep(15 * time.Second)
 // 		start := time.Now()
-// 		UpdateArticleImage()
+// 		// UpdateArticleImage()
+// 		UpdateArticleImageV2()
 // 		fmt.Printf("Total Update Duration : %s\n", time.Since(start))
 // 	}()
 // }

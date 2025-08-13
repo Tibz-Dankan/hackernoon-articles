@@ -8,9 +8,7 @@ import (
 )
 
 func GetArticlesWithoutImages() {
-	// filename, err := filepath.Abs("./20250803-004514-hn-bitcoin-articles.json")
-	// filename, err := filepath.Abs("./20250810-172849-hackernoon-bitcoin-articles.json")
-	filename, err := filepath.Abs("./20250810-200425-hackernoon-bitcoin-articles.json")
+	filename, err := filepath.Abs("./20250803-004514-hn-bitcoin-articles.json")
 	if err != nil {
 		log.Println("Error finding absolute path:", err)
 	}
