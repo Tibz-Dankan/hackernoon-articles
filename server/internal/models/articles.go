@@ -98,6 +98,21 @@ func (a *Article) FindAllByPostedAt(limit int, articleIDCursor string,
 	return articles, count, nil
 }
 
+func (a *Article) FindAllByPostedAtInAsc(limit int) ([]Article, int64, error) {
+	var articles []Article
+	var count int64
+	query := db.Model(&Article{}).
+		Order("\"postedAt\" ASC").
+		Limit(int(limit))
+
+	if err := query.Count(&count).Error; err != nil {
+		return nil, 0, err
+	}
+	query.Find(&articles)
+
+	return articles, count, nil
+}
+
 func (a *Article) FindAllWithWrongImage(limit float64, cursor string) ([]Article, int64, error) {
 	var articles []Article
 	query := db.Model(&Article{}).
@@ -118,6 +133,14 @@ func (a *Article) FindAllWithWrongImage(limit float64, cursor string) ([]Article
 	}
 
 	return articles, count, nil
+}
+
+func (a *Article) FindCount() (int64, error) {
+	var count int64
+	if err := db.Model(&Article{}).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 func (a *Article) Search(searchQuery, articleIDCursor string,
@@ -150,6 +173,27 @@ func (a *Article) Search(searchQuery, articleIDCursor string,
 
 	if !dateCursor.IsZero() {
 		query = query.Where("\"postedAt\" <= ?", dateCursor)
+	}
+
+	if err := query.Find(&articles).Error; err != nil {
+		return articles, 0, err
+	}
+
+	return articles, count, nil
+}
+
+func (a *Article) SearchByTagIndex(searchQuery string) ([]Article, int64, error) {
+	var articles []Article
+	query := db.Model(&Article{}).
+		Preload("Author").
+		Order("\"postedAt\" DESC")
+
+	// query = query.Where("\"tagIndex\" ILIKE ?", "%"+searchQuery+"%")
+	query = query.Where("\"tagIndex\" = ?", searchQuery)
+
+	var count int64
+	if err := query.Count(&count).Error; err != nil {
+		return nil, 0, err
 	}
 
 	if err := query.Find(&articles).Error; err != nil {

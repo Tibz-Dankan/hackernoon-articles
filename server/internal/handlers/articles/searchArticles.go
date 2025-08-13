@@ -31,7 +31,7 @@ var SearchArticles = func(c *fiber.Ctx) error {
 		articleIDCursorParam = ""
 	}
 
-	var parsedDateCursorParam time.Time
+	// var parsedDateCursorParam time.Time
 	var offset int
 
 	if dateCursorParam != "" {
@@ -51,8 +51,13 @@ var SearchArticles = func(c *fiber.Ctx) error {
 		log.Println(offset)
 	}
 
-	allArticles, count, err := articles.Search(searchQuery, articleIDCursorParam,
-		parsedDateCursorParam, int(limit), offset)
+	// allArticles, count, err := articles.Search(searchQuery, articleIDCursorParam,
+	// 	parsedDateCursorParam, int(limit), offset)
+	// if err != nil {
+	// 	return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	// }
+
+	allArticles, count, err := articles.SearchByTagIndex(searchQuery)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}

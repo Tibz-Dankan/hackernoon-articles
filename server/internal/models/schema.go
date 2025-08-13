@@ -10,6 +10,7 @@ type Article struct {
 	ID            string    `gorm:"column:id;type:uuid;primaryKey" json:"id"`
 	AuthorID      string    `gorm:"column:authorID;not null;index" json:"authorID"`
 	Tag           string    `gorm:"column:tag;not null;index" json:"tag"`
+	TagIndex      string    `gorm:"column:tagIndex;index" json:"tagIndex"`
 	Title         string    `gorm:"column:title;not null;index" json:"title"`
 	Href          string    `gorm:"column:href;default:null" json:"href"`
 	ImageUrl      string    `gorm:"column:imageUrl;not null" json:"imageUrl"`
