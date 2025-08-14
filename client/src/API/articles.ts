@@ -33,7 +33,7 @@ class ArticleService {
     offset,
   }: TArticle["searchArticles"]) => {
     const response = await fetch(
-      `${SERVER_URL}/api/v0.1/articles/search?limit=${limit}&query=${query}
+      `${SERVER_URL}/api/v0.1/articles/search?limit=${limit}&query=${query.trim()}
       &articleIDCursor=${articleIDCursor}&dateCursor=${dateCursor}&offset=${offset}`,
       {
         method: "GET",
