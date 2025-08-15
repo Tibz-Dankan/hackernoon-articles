@@ -6,7 +6,7 @@ import { Search, Loader2 } from "lucide-react";
 import { Button } from "./Button";
 import type { TArticle } from "../types/articles";
 import { article } from "../API/articles";
-import { useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 
 interface SearchArticlesProps {
   onSuccess: (result: any) => void;
@@ -14,14 +14,14 @@ interface SearchArticlesProps {
 }
 
 export const SearchArticles: React.FC<SearchArticlesProps> = (props) => {
-  // const [searchParams, setSearchParams] = useSearchParams();
-  const [_, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const { isPending, mutate } = useMutation({
     mutationFn: article.search,
     onSuccess: async (response: any) => {
       console.log("response:", response);
-      props.onSuccess(response.data.apps);
+      props.onSuccess(response);
     },
     onError: (error: any) => {
       console.log("Error: ", error.message);
@@ -40,9 +40,10 @@ export const SearchArticles: React.FC<SearchArticlesProps> = (props) => {
     }),
 
     onSubmit: async (values, helpers) => {
+      values.query = values.query.trim();
+
       try {
         mutate(values);
-
         setSearchParams(
           (prev) => {
             prev.set("query", values.query);
@@ -64,36 +65,19 @@ export const SearchArticles: React.FC<SearchArticlesProps> = (props) => {
     const query = event.target.value;
     props.onQueryValue(!!event.target.value);
 
+    console.log("query input ", query);
+
     if (!query) {
-      setSearchParams(
-        (prev) => {
-          prev.set("query", event.target.value);
-          return prev;
-        },
-        { replace: true }
-      );
+      console.log("No query string");
+      const currentParams = new URLSearchParams(searchParams.toString());
+      currentParams.delete("query");
+      navigate(`${location.pathname}?${currentParams.toString()}`);
       return;
     }
-    // setSearchParams({
-    //   query: query,
-    //   aIDCursor: articleIDCursor!,
-    //   dCursor: dateCursor!,
-    // });
 
-    // setSearchParams(
-    //   (prev) => {
-    //     prev.set("query", query);
-    //     prev.set("dCursor", prev.get("aIDCursor")!);
-    //     prev.set("aIDCursor", prev.get("aIDCursor")!);
-    //     return prev;
-    //   },
-    //   { replace: true }
-    // );
-
-    // searchParams.set("query", query);
     setSearchParams(
       (prev) => {
-        prev.set("query", "");
+        prev.set("query", event.target.value);
         return prev;
       },
       { replace: true }
@@ -145,6 +129,7 @@ export const SearchArticles: React.FC<SearchArticlesProps> = (props) => {
             type="submit"
             disabled={isPending}
             className={`px-2 py-[6px] h-auto absolute top-[5px] right-1
+              flex items-center justify-center
              ${hasSearchQuery ? "bg-(--clr-primary)" : ""}`}
           />
         </form>
