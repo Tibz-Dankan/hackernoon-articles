@@ -13,6 +13,8 @@ import { Button } from "./Button";
 import { SquareBlocks } from "./SquareBlocks";
 import type { Loader } from "../types/loader";
 import type { Pagination } from "../types/pagination";
+import { SearchArticles } from "./SearchArticles";
+import { DatePicker } from "./DatePicker";
 
 export const Home: React.FC = () => {
   const [articles, setArticles] = useState<TArticle["article"][]>([]);
@@ -50,6 +52,7 @@ export const Home: React.FC = () => {
         setSearchParams({
           dCursor: new Date(values.timeTravelBitcoin).toISOString(),
           aIDCursor: "",
+          query: "",
         });
       } catch (error) {
         helpers.setStatus({ success: false });
@@ -69,6 +72,7 @@ export const Home: React.FC = () => {
     setSearchParams({
       dCursor: "",
       aIDCursor: pagination!.prevCursor,
+      query: "",
     });
   };
 
@@ -114,9 +118,14 @@ export const Home: React.FC = () => {
           </div>
           <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-2">
             <div className="w-full sm:w-auto">
-              <InputField
+              {/* <InputField
                 name={"timeTravelBitcoin"}
                 type={"date"}
+                formik={formik}
+              /> */}
+              <DatePicker
+                name={"timeTravelBitcoin"}
+                // type={"date"}
                 formik={formik}
               />
             </div>
@@ -142,6 +151,16 @@ export const Home: React.FC = () => {
             />
           </div>
         </form>
+        <div className="w-full">
+          <SearchArticles
+            onSuccess={function (result: any): void {
+              throw new Error("Function not implemented.");
+            }}
+            onQueryValue={function (hasQueryValue: boolean): void {
+              throw new Error("Function not implemented.");
+            }}
+          />
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {articles.map((article, index) => (
             <div key={index} className="w-full">

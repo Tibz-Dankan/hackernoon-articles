@@ -3,7 +3,6 @@ package articles
 import (
 	"log"
 	"strconv"
-	"time"
 
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/models"
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/pkg"
@@ -15,7 +14,7 @@ var SearchArticles = func(c *fiber.Ctx) error {
 	searchQuery := c.Query("query")
 	limitParam := c.Query("limit")
 	articleIDCursorParam := c.Query("articleIDCursor")
-	dateCursorParam := c.Query("dateCursor")
+	// dateCursorParam := c.Query("dateCursor")
 	offsetParam := c.Query("offset")
 
 	if searchQuery == "" {
@@ -34,14 +33,15 @@ var SearchArticles = func(c *fiber.Ctx) error {
 	// var parsedDateCursorParam time.Time
 	var offset int
 
-	if dateCursorParam != "" {
-		parsedDateCursorParam, err := time.Parse(time.RFC3339, dateCursorParam)
-		if err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, "Invalid offset format! Must be an ISO 8601 string.")
-		}
-		log.Printf("parsedDateCursorParam: %v\n", parsedDateCursorParam)
+	// if dateCursorParam != "" {
+	// 	parsedDateCursorParam, err := time.Parse(time.RFC3339, dateCursorParam)
+	// 	log.Println("dateCursorParam :", dateCursorParam)
+	// 	if err != nil {
+	// 		return fiber.NewError(fiber.StatusBadRequest, "Invalid offset format! Must be an ISO 8601 string.")
+	// 	}
+	// 	log.Printf("parsedDateCursorParam: %v\n", parsedDateCursorParam)
 
-	}
+	// }
 
 	if offsetParam != "" {
 		offset, err = strconv.Atoi(offsetParam)
