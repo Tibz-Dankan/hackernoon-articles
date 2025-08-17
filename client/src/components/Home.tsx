@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Layout } from "./Layout";
 import type { TArticle } from "../types/articles";
-import { ArrowRight, RefreshCw, RotateCcw } from "lucide-react";
+import { ArrowRight, InfoIcon, RefreshCw, RotateCcw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { article } from "../API/articles";
-import { useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { ArticleCard } from "./ArticleCard";
-import { InputField } from "./InputField";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { Button } from "./Button";
@@ -15,15 +14,25 @@ import type { Loader } from "../types/loader";
 import type { Pagination } from "../types/pagination";
 import { SearchArticles } from "./SearchArticles";
 import { DatePicker } from "./DatePicker";
+import { X } from "lucide-react";
 
 export const Home: React.FC = () => {
   const [articles, setArticles] = useState<TArticle["article"][]>([]);
+  const [searchArticles, setSearchArticles] = useState<TArticle["article"][]>(
+    []
+  );
   const [pagination, setPagination] = useState<Pagination>();
+  const [showArticle, setShowArticle] = useState<boolean>(true);
+  const [searchResultCount, setSearchResultCount] = useState<number>();
+
+  const navigate = useNavigate();
+
   const [searchParams, setSearchParams] = useSearchParams();
   const [loader, setLoader] = useState<Loader>("INITIAL");
   const articleIDCursor = searchParams.get("aIDCursor");
   const dateCursor = searchParams.get("dCursor");
   const offset = searchParams.get("offset");
+  const searchQuery = searchParams.get("query");
 
   const { isPending, data } = useQuery({
     queryKey: [`articles-${articleIDCursor}-${dateCursor}-${offset}`],
@@ -61,8 +70,6 @@ export const Home: React.FC = () => {
     },
   });
 
-  // const articles: TArticle["article"][] = data?.data ?? [];
-  // const pagination: Pagination = data?.pagination ?? {};
   const isInitialLoader = loader === "INITIAL";
   const isArticleIDCursorLoader = loader === "ARTICLE_ID_CURSOR";
   const isDateCursorLoader = loader === "DATE_CURSOR";
@@ -74,6 +81,35 @@ export const Home: React.FC = () => {
       aIDCursor: pagination!.prevCursor,
       query: "",
     });
+  };
+
+  const closeSearchResultHandler = () => {
+    const currentParams = new URLSearchParams(searchParams.toString());
+    currentParams.delete("query");
+    navigate(`${location.pathname}?${currentParams.toString()}`);
+
+    setSearchResultCount(() => 0);
+    setShowArticle(() => true);
+  };
+
+  const getArticleHeader = () => {
+    if (dateCursor) {
+      const date = new Date(dateCursor).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+      return `Showing articles from ${date} onwards (going back in time)`;
+    }
+
+    return "Showing latest articles";
+  };
+
+  const onSearchSuccess = (results: any) => {
+    console.log("search results:", results);
+    setShowArticle(() => false);
+    setSearchArticles(() => results.data);
+    setSearchResultCount(() => results.data.length);
   };
 
   useEffect(() => {
@@ -118,16 +154,7 @@ export const Home: React.FC = () => {
           </div>
           <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-2">
             <div className="w-full sm:w-auto">
-              {/* <InputField
-                name={"timeTravelBitcoin"}
-                type={"date"}
-                formik={formik}
-              /> */}
-              <DatePicker
-                name={"timeTravelBitcoin"}
-                // type={"date"}
-                formik={formik}
-              />
+              <DatePicker name={"timeTravelBitcoin"} formik={formik} />
             </div>
             <Button
               label={
@@ -153,46 +180,84 @@ export const Home: React.FC = () => {
         </form>
         <div className="w-full">
           <SearchArticles
-            onSuccess={function (result: any): void {
-              throw new Error("Function not implemented.");
-            }}
+            onSuccess={onSearchSuccess}
             onQueryValue={function (hasQueryValue: boolean): void {
-              throw new Error("Function not implemented.");
+              console.log("hasQueryValue: ", hasQueryValue);
             }}
           />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {articles.map((article, index) => (
-            <div key={index} className="w-full">
-              <ArticleCard article={article} />
-            </div>
-          ))}
-        </div>
-        <div className="flex items-center justify-center text-(--clr-primary)">
-          <Button
-            label={
-              <>
-                {!isPending && (
-                  <div className="flex items-center justify-center gap-2">
-                    <span>Next</span>
-                    <ArrowRight size={20} />
-                  </div>
-                )}
-                {isPending && isArticleIDCursorLoader && (
-                  <div className="flex items-center justify-center gap-2">
-                    <RefreshCw className="animate-spin" size={24} />
-                    <span>Loading...</span>
-                  </div>
-                )}
-              </>
-            }
-            type={"button"}
-            disabled={isPending}
-            className="min-w-40 bg-(--clr-background) border-[1px]
+        {showArticle && (
+          <div
+            className="flex items-center justify-start gap-2 px-4 py-3
+            rounded-md bg-[#0ca678]/[0.3] w-full"
+          >
+            <span className="w-5 h-5">
+              <InfoIcon className="w-5 h-5 text-gray-200" />
+            </span>
+            <span className="text-gray-200">{getArticleHeader()}</span>
+          </div>
+        )}
+        {showArticle && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {articles.map((article, index) => (
+              <div key={index} className="w-full">
+                <ArticleCard article={article} />
+              </div>
+            ))}
+          </div>
+        )}
+        {showArticle && (
+          <div className="flex items-center justify-center text-(--clr-primary)">
+            <Button
+              label={
+                <>
+                  {!isPending && (
+                    <div className="flex items-center justify-center gap-2">
+                      <span>Next</span>
+                      <ArrowRight size={20} />
+                    </div>
+                  )}
+                  {isPending && isArticleIDCursorLoader && (
+                    <div className="flex items-center justify-center gap-2">
+                      <RefreshCw className="animate-spin" size={24} />
+                      <span>Loading...</span>
+                    </div>
+                  )}
+                </>
+              }
+              type={"button"}
+              disabled={isPending}
+              className="min-w-40 bg-(--clr-background) border-[1px]
              border-[rgba(73,80,87,0.6)]"
-            onClick={() => triggerLoadMoreArticles()}
-          />
-        </div>
+              onClick={() => triggerLoadMoreArticles()}
+            />
+          </div>
+        )}
+        {!!searchResultCount && (
+          <div
+            className="w-full  relative flex items-center justify-between
+             gap-4 px-4 py-3 rounded-md bg-[#0ca678]/[0.3]"
+          >
+            <p className="text-base w-/5 text-gray-200">
+              {searchResultCount} search results for "{searchQuery}"
+            </p>
+            <span
+              className="cursor-pointer"
+              onClick={() => closeSearchResultHandler()}
+            >
+              <X className="w-5 h-5 text-gray-200" />
+            </span>
+          </div>
+        )}
+        {!!searchResultCount && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {searchArticles.map((article, index) => (
+              <div key={index} className="w-full">
+                <ArticleCard article={article} />
+              </div>
+            ))}
+          </div>
+        )}
         <div>
           <SquareBlocks />
         </div>

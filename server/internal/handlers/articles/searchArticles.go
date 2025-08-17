@@ -2,7 +2,6 @@ package articles
 
 import (
 	"log"
-	"strconv"
 
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/models"
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/pkg"
@@ -13,22 +12,24 @@ var SearchArticles = func(c *fiber.Ctx) error {
 	articles := models.Article{}
 	searchQuery := c.Query("query")
 	limitParam := c.Query("limit")
-	articleIDCursorParam := c.Query("articleIDCursor")
+	// articleIDCursorParam := c.Query("articleIDCursor")
 	// dateCursorParam := c.Query("dateCursor")
-	offsetParam := c.Query("offset")
+	// offsetParam := c.Query("offset")
 
 	if searchQuery == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "Search query can't be empty!")
 	}
+
+	log.Println("searchQuery: ", searchQuery)
 
 	limit, err := pkg.ValidateQueryLimit(limitParam)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 
-	if articleIDCursorParam == "" {
-		articleIDCursorParam = ""
-	}
+	// if articleIDCursorParam == "" {
+	// 	articleIDCursorParam = ""
+	// }
 
 	// var parsedDateCursorParam time.Time
 	var offset int
@@ -43,13 +44,13 @@ var SearchArticles = func(c *fiber.Ctx) error {
 
 	// }
 
-	if offsetParam != "" {
-		offset, err = strconv.Atoi(offsetParam)
-		if err != nil {
-			log.Println("Error converting offsetParam to an integer:", err)
-		}
-		log.Println(offset)
-	}
+	// if offsetParam != "" {
+	// 	offset, err = strconv.Atoi(offsetParam)
+	// 	if err != nil {
+	// 		log.Println("Error converting offsetParam to an integer:", err)
+	// 	}
+	// 	log.Println(offset)
+	// }
 
 	// allArticles, count, err := articles.Search(searchQuery, articleIDCursorParam,
 	// 	parsedDateCursorParam, int(limit), offset)
