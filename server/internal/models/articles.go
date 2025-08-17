@@ -203,6 +203,107 @@ func (a *Article) SearchByTagIndex(searchQuery string) ([]Article, int64, error)
 	return articles, count, nil
 }
 
+// func (a *Article) GetArticleCountPerDay(limit int, dateCursor time.Time) ([]map[string]interface{}, error) {
+// 	var results []struct {
+// 		Date  time.Time `json:"date"`
+// 		Count int64     `json:"count"`
+// 	}
+
+// 	query := db.Model(&Article{}).
+// 		Select("DATE(\"postedAt\") as date, COUNT(*) as count").
+// 		Group("DATE(\"postedAt\")").
+// 		Order("date DESC").
+// 		Limit(limit)
+
+// 	// Apply date cursor for pagination
+// 	if !dateCursor.IsZero() {
+// 		query = query.Where("DATE(\"postedAt\") < DATE(?)", dateCursor)
+// 	}
+
+// 	if err := query.Find(&results).Error; err != nil {
+// 		return nil, err
+// 	}
+
+// 	// Convert results to the desired format
+// 	var dayArticleCounts []map[string]interface{}
+// 	for _, result := range results {
+// 		dayData := map[string]interface{}{
+// 			"date":  result.Date.Format("2006-01-02"),
+// 			"count": result.Count,
+// 		}
+// 		dayArticleCounts = append(dayArticleCounts, dayData)
+// 	}
+
+// 	return dayArticleCounts, nil
+// }
+
+func (a *Article) GetArticleCountPerDay(limit int, dateCursor time.Time) ([]map[string]interface{}, error) {
+	var results []struct {
+		Date  time.Time `json:"date"`
+		Count int64     `json:"count"`
+	}
+
+	query := db.Model(&Article{}).
+		Select("DATE(\"postedAt\") as date, COUNT(*) as count").
+		Group("DATE(\"postedAt\")").
+		Order("date DESC").
+		Limit(limit)
+
+	if !dateCursor.IsZero() {
+		query = query.Where("DATE(\"postedAt\") < DATE(?)", dateCursor)
+	}
+
+	if err := query.Find(&results).Error; err != nil {
+		return nil, err
+	}
+
+	if len(results) == 0 {
+		return []map[string]interface{}{}, nil
+	}
+
+	// Create a map for quick lookup of existing dates and their counts
+	dateCountMap := make(map[string]int64)
+	for _, result := range results {
+		dateStr := result.Date.Format("2006-01-02")
+		dateCountMap[dateStr] = result.Count
+	}
+
+	// Get the first (latest) and last (oldest) dates from results
+	firstDate := results[0].Date             // Latest date
+	lastDate := results[len(results)-1].Date // Oldest date
+
+	// Fill in missing dates between first and last date
+	var dayArticleCounts []map[string]interface{}
+	currentDate := firstDate
+
+	for !currentDate.Before(lastDate) {
+		dateStr := currentDate.Format("2006-01-02")
+
+		// Check if date exists in our results
+		count, exists := dateCountMap[dateStr]
+		if !exists {
+			count = 0 // Set count to 0 for missing dates
+		}
+
+		dayData := map[string]interface{}{
+			"date":  dateStr,
+			"count": count,
+		}
+		dayArticleCounts = append(dayArticleCounts, dayData)
+
+		// Move to previous day (since we're in descending order)
+		currentDate = currentDate.AddDate(0, 0, -1)
+	}
+
+	return dayArticleCounts, nil
+}
+
+func (a *Article) CountDistinctDays(count *int64) error {
+	return db.Model(&Article{}).
+		Select("COUNT(DISTINCT DATE(\"postedAt\"))").
+		Row().Scan(count)
+}
+
 func (a *Article) Update() (Article, error) {
 	db.Save(&a)
 

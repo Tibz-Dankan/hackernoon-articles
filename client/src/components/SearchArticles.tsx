@@ -20,7 +20,6 @@ export const SearchArticles: React.FC<SearchArticlesProps> = (props) => {
   const { isPending, mutate } = useMutation({
     mutationFn: article.search,
     onSuccess: async (response: any) => {
-      console.log("response:", response);
       props.onSuccess(response);
     },
     onError: (error: any) => {
@@ -65,10 +64,7 @@ export const SearchArticles: React.FC<SearchArticlesProps> = (props) => {
     const query = event.target.value;
     props.onQueryValue(!!event.target.value);
 
-    console.log("query input ", query);
-
     if (!query) {
-      console.log("No query string");
       const currentParams = new URLSearchParams(searchParams.toString());
       currentParams.delete("query");
       navigate(`${location.pathname}?${currentParams.toString()}`);
