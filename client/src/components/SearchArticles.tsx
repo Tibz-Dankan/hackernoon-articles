@@ -115,10 +115,7 @@ export const SearchArticles: React.FC<SearchArticlesProps> = (props) => {
                   />
                 )}
                 {isPending && (
-                  <Loader2
-                    size={20}
-                    className="text-color-text-primary -mr-2 animate-spin"
-                  />
+                  <Loader2 size={20} className="text-gray-200 animate-spin" />
                 )}
               </>
             }
