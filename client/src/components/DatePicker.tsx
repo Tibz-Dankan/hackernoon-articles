@@ -58,12 +58,14 @@ export const DatePicker: React.FC<DatePickerProps> = (props) => {
             onBlur={formik?.handleBlur}
             onChange={formik?.handleChange}
             value={currentValue}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10
+            min-w-40"
             style={{
               // Ensure the input covers the entire custom element
               position: "absolute",
               top: 0,
               left: 0,
+              minWidth: "160px",
               width: "100%",
               height: "100%",
               opacity: 0,
@@ -77,7 +79,7 @@ export const DatePicker: React.FC<DatePickerProps> = (props) => {
             className={`
               relative p-2 rounded-md border-[1px] 
               bg-[rgba(8,127,91,0.15)] text-gray-50
-              transition-all text-base w-full
+              transition-all text-base w-full min-w-40
               flex items-center justify-between
               cursor-pointer min-h-[42px]
               ${hasError ? "border-red-400" : "border-[rgba(73,80,87,0.6)]"}

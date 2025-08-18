@@ -58,11 +58,18 @@ export const Home: React.FC = () => {
     onSubmit: async (values, helpers) => {
       try {
         setLoader(() => "DATE_CURSOR");
-        setSearchParams({
-          dCursor: new Date(values.timeTravelBitcoin).toISOString(),
-          aIDCursor: "",
-          query: "",
-        });
+        setSearchParams(
+          (prev) => {
+            prev.set(
+              "dCursor",
+              new Date(values.timeTravelBitcoin).toISOString()
+            );
+            prev.set("aIDCursor", "");
+            prev.set("query", "");
+            return prev;
+          },
+          { replace: true }
+        );
       } catch (error) {
         helpers.setStatus({ success: false });
         helpers.setSubmitting(false);
@@ -76,11 +83,15 @@ export const Home: React.FC = () => {
 
   const triggerLoadMoreArticles = () => {
     setLoader(() => "ARTICLE_ID_CURSOR");
-    setSearchParams({
-      dCursor: "",
-      aIDCursor: pagination!.prevCursor,
-      query: "",
-    });
+    setSearchParams(
+      (prev) => {
+        prev.set("dCursor", "");
+        prev.set("aIDCursor", pagination!.prevCursor);
+        prev.set("query", "");
+        return prev;
+      },
+      { replace: true }
+    );
   };
 
   const closeSearchResultHandler = () => {
