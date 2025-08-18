@@ -49,6 +49,24 @@ class ArticleService {
 
     return await response.json();
   };
+
+  getDayCount = async ({ limit, dateCursor }: TArticle["getAllArticles"]) => {
+    const response = await fetch(
+      `${SERVER_URL}/api/v0.1/articles/day-count?limit=${limit}&dateCursor=${dateCursor}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message);
+    }
+    return await response.json();
+  };
 }
 
 export const article = new ArticleService();

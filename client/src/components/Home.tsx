@@ -9,12 +9,12 @@ import { ArticleCard } from "./ArticleCard";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { Button } from "./Button";
-import { SquareBlocks } from "./SquareBlocks";
 import type { Loader } from "../types/loader";
 import type { Pagination } from "../types/pagination";
 import { SearchArticles } from "./SearchArticles";
 import { DatePicker } from "./DatePicker";
 import { X } from "lucide-react";
+import { SquareBlockLayout } from "./SquareBlockLayout";
 
 export const Home: React.FC = () => {
   const [articles, setArticles] = useState<TArticle["article"][]>([]);
@@ -58,11 +58,18 @@ export const Home: React.FC = () => {
     onSubmit: async (values, helpers) => {
       try {
         setLoader(() => "DATE_CURSOR");
-        setSearchParams({
-          dCursor: new Date(values.timeTravelBitcoin).toISOString(),
-          aIDCursor: "",
-          query: "",
-        });
+        setSearchParams(
+          (prev) => {
+            prev.set(
+              "dCursor",
+              new Date(values.timeTravelBitcoin).toISOString()
+            );
+            prev.set("aIDCursor", "");
+            prev.set("query", "");
+            return prev;
+          },
+          { replace: true }
+        );
       } catch (error) {
         helpers.setStatus({ success: false });
         helpers.setSubmitting(false);
@@ -76,11 +83,15 @@ export const Home: React.FC = () => {
 
   const triggerLoadMoreArticles = () => {
     setLoader(() => "ARTICLE_ID_CURSOR");
-    setSearchParams({
-      dCursor: "",
-      aIDCursor: pagination!.prevCursor,
-      query: "",
-    });
+    setSearchParams(
+      (prev) => {
+        prev.set("dCursor", "");
+        prev.set("aIDCursor", pagination!.prevCursor);
+        prev.set("query", "");
+        return prev;
+      },
+      { replace: true }
+    );
   };
 
   const closeSearchResultHandler = () => {
@@ -228,7 +239,7 @@ export const Home: React.FC = () => {
               type={"button"}
               disabled={isPending}
               className="min-w-40 bg-(--clr-background) border-[1px]
-             border-[rgba(73,80,87,0.6)]"
+              border-[rgba(73,80,87,0.6)]"
               onClick={() => triggerLoadMoreArticles()}
             />
           </div>
@@ -258,8 +269,8 @@ export const Home: React.FC = () => {
             ))}
           </div>
         )}
-        <div>
-          <SquareBlocks />
+        <div className="w-full">
+          <SquareBlockLayout />
         </div>
       </div>
     </Layout>
