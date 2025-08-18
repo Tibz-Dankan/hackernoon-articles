@@ -38,9 +38,15 @@ type SearchArticles = {
   offset?: number;
 };
 
+type CountArticle = {
+  count: number;
+  date: string;
+};
+
 export type TArticle = {
   article: Prettify<Article>;
   author: Prettify<Author>;
   getAllArticles: Prettify<GetAllArticles>;
   searchArticles: Prettify<SearchArticles>;
+  countArticle: Prettify<CountArticle>;
 };
