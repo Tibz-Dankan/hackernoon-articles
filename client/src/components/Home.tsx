@@ -30,6 +30,8 @@ export const Home: React.FC = () => {
   const [pagination, setPagination] = useState<Pagination>();
   const [showArticle, setShowArticle] = useState<boolean>(true);
   const [searchResultCount, setSearchResultCount] = useState<number>();
+  // const [disableNextHandler, setDisableNextHandler] = useState(false);
+  const [disablePrevHandler, setDisablePrevHandler] = useState(false);
 
   const navigate = useNavigate();
 
@@ -96,8 +98,16 @@ export const Home: React.FC = () => {
         prev.set("query", "");
         return prev;
       },
-      { replace: true }
+      { replace: false }
     );
+  };
+
+  const prevLoadHandler = () => {
+    if (!articleIDCursor) {
+      setDisablePrevHandler(() => true);
+      return;
+    }
+    navigate(-1);
   };
 
   const closeSearchResultHandler = () => {
@@ -128,6 +138,17 @@ export const Home: React.FC = () => {
     setSearchArticles(() => results.data);
     setSearchResultCount(() => results.data.length);
   };
+
+  useEffect(() => {
+    const updateNavButtonDisabilityHandler = () => {
+      if (!articleIDCursor) {
+        setDisablePrevHandler(() => true);
+        return;
+      }
+      setDisablePrevHandler(() => false);
+    };
+    updateNavButtonDisabilityHandler();
+  }, [articleIDCursor]);
 
   useEffect(() => {
     const updateArticles = () => {
@@ -161,7 +182,7 @@ export const Home: React.FC = () => {
           >
             <div
               className="w-full flex items-center justify-center gap-2 text-base
-            text-gray-400"
+              text-gray-400"
             >
               <span className="hidden sm:block">
                 <RotateCcw size={20} />
@@ -228,26 +249,16 @@ export const Home: React.FC = () => {
             <div className="flex items-center justify-center text-(--clr-primary) gap-4">
               <Button
                 label={
-                  <>
-                    {!isPending && (
-                      <div className="flex items-center justify-center gap-2">
-                        <ArrowLeft size={20} />
-                        <span>Previous</span>
-                      </div>
-                    )}
-                    {isPending && isArticleIDCursorLoader && (
-                      <div className="flex items-center justify-center gap-2">
-                        <RefreshCw className="animate-spin" size={24} />
-                        <span>Loading...</span>
-                      </div>
-                    )}
-                  </>
+                  <div className="flex items-center justify-center gap-2">
+                    <ArrowLeft size={20} className="text-inherit" />
+                    <span className="text-inherit">Previous</span>
+                  </div>
                 }
                 type={"button"}
-                disabled={isPending}
+                disabled={disablePrevHandler}
                 className="min-w-40 bg-(--clr-background) border-[1px]
-              border-[rgba(73,80,87,0.6)]"
-                onClick={() => triggerLoadMoreArticles()}
+                border-[rgba(73,80,87,0.6)] disabled:text-gray-100/50"
+                onClick={() => prevLoadHandler()}
               />
               <Button
                 label={

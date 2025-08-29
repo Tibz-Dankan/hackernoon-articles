@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
 import { article } from "../API/articles";
-import { useLocation, useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { ArrowLeft, ArrowRight, RefreshCw } from "lucide-react";
 import type { TArticle } from "../types/articles";
 import { SquareBlock } from "./SquareBlock";
@@ -13,8 +13,9 @@ export const SquareBlockLayout: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [loader, setLoader] = useState<Loader>("INITIAL");
   const dateCursor = searchParams.get("bdCursor");
-  const [disableNextHandler, setDisableNextHandler] = useState(false);
+  // const [disableNextHandler, setDisableNextHandler] = useState(false);
   const [disablePrevHandler, setDisablePrevHandler] = useState(false);
+  const navigate = useNavigate();
 
   const { isPending, data } = useQuery({
     queryKey: [`block-articles-${dateCursor}`],
@@ -40,9 +41,29 @@ export const SquareBlockLayout: React.FC = () => {
         prev.set("bdCursor", pagination!.nextCursor);
         return prev;
       },
-      { replace: true }
+      { replace: false }
     );
   };
+
+  const prevLoadHandler = () => {
+    if (!dateCursor) {
+      setDisablePrevHandler(() => true);
+      return;
+    }
+    navigate(-1);
+  };
+
+  useEffect(() => {
+    const updateNavButtonDisabilityHandler = () => {
+      if (!dateCursor) {
+        setDisablePrevHandler(() => true);
+        return;
+      }
+
+      setDisablePrevHandler(() => false);
+    };
+    updateNavButtonDisabilityHandler();
+  }, [dateCursor]);
 
   if (isPending && isInitialLoader) {
     return (
@@ -59,8 +80,6 @@ export const SquareBlockLayout: React.FC = () => {
   const nextLoadHandler = () => {
     triggerLoadMoreArticles();
   };
-
-  const prevLoadHandler = () => {};
 
   return (
     <div className="w-full space-y-8">
@@ -80,25 +99,15 @@ export const SquareBlockLayout: React.FC = () => {
       <div className="flex items-center justify-center text-(--clr-primary) gap-4">
         <Button
           label={
-            <>
-              {!isPending && (
-                <div className="flex items-center justify-center gap-2">
-                  <ArrowLeft size={20} />
-                  <span>Previous</span>
-                </div>
-              )}
-              {isPending && isDateCursorLoader && (
-                <div className="flex items-center justify-center gap-2">
-                  <RefreshCw className="animate-spin" size={24} />
-                  <span>Loading...</span>
-                </div>
-              )}
-            </>
+            <div className="flex items-center justify-center gap-2">
+              <ArrowLeft size={20} className="text-inherit" />
+              <span className="text-inherit">Previous</span>
+            </div>
           }
           type={"button"}
-          disabled={isPending}
+          disabled={disablePrevHandler}
           className="min-w-40 bg-(--clr-background) border-[1px]
-           border-[rgba(73,80,87,0.6)]"
+           border-[rgba(73,80,87,0.6)] disabled:text-gray-100/50"
           onClick={() => prevLoadHandler()}
         />
         <Button
@@ -106,14 +115,14 @@ export const SquareBlockLayout: React.FC = () => {
             <>
               {!isPending && (
                 <div className="flex items-center justify-center gap-2">
-                  <span>Next</span>
-                  <ArrowRight size={20} />
+                  <span className="text-inherit">Next</span>
+                  <ArrowRight size={20} className="text-inherit" />
                 </div>
               )}
               {isPending && isDateCursorLoader && (
                 <div className="flex items-center justify-center gap-2">
-                  <RefreshCw className="animate-spin" size={24} />
-                  <span>Loading...</span>
+                  <RefreshCw className="animate-spin text-inherit" size={24} />
+                  <span className="text-inherit">Loading...</span>
                 </div>
               )}
             </>
@@ -121,7 +130,7 @@ export const SquareBlockLayout: React.FC = () => {
           type={"button"}
           disabled={isPending}
           className="min-w-40 bg-(--clr-background) border-[1px]
-           border-[rgba(73,80,87,0.6)]"
+           border-[rgba(73,80,87,0.6)] disabled:text-gray-100/50"
           onClick={() => nextLoadHandler()}
         />
       </div>
