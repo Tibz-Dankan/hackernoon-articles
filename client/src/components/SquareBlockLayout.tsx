@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { article } from "../API/articles";
-import { useSearchParams } from "react-router";
-import { ArrowRight, RefreshCw } from "lucide-react";
+import { useLocation, useNavigate, useSearchParams } from "react-router";
+import { ArrowLeft, ArrowRight, RefreshCw } from "lucide-react";
 import type { TArticle } from "../types/articles";
 import { SquareBlock } from "./SquareBlock";
 import { Button } from "./Button";
@@ -13,6 +13,8 @@ export const SquareBlockLayout: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [loader, setLoader] = useState<Loader>("INITIAL");
   const dateCursor = searchParams.get("bdCursor");
+  const [disableNextHandler, setDisableNextHandler] = useState(false);
+  const [disablePrevHandler, setDisablePrevHandler] = useState(false);
 
   const { isPending, data } = useQuery({
     queryKey: [`block-articles-${dateCursor}`],
@@ -45,8 +47,8 @@ export const SquareBlockLayout: React.FC = () => {
   if (isPending && isInitialLoader) {
     return (
       <div
-        className="text-gray-50 flex-1 w-full h-full flex 
-        items-center justify-center gap-2"
+        className="text-gray-50 flex-1 w-full h-full flex
+         items-center justify-center gap-2"
       >
         <RefreshCw className="animate-spin" size={24} />
         <span>Loading..</span>
@@ -54,21 +56,51 @@ export const SquareBlockLayout: React.FC = () => {
     );
   }
 
+  const nextLoadHandler = () => {
+    triggerLoadMoreArticles();
+  };
+
+  const prevLoadHandler = () => {};
+
   return (
     <div className="w-full space-y-8">
-      {hasArticles && (
-        <div
-          className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 
-          xl:grid-cols-8 gap-4"
-        >
-          {articleBlocks?.map((articleCount, index) => (
-            <div key={index} className="w-full">
-              <SquareBlock articleCount={articleCount} />
+      <div className="">
+        {hasArticles && (
+          <div className="w-full overflow-x-auto scrollbar-none">
+            <div className="flex gap-4 pb-4">
+              {articleBlocks?.map((articleCount, index) => (
+                <div key={index} className="flex-shrink-0">
+                  <SquareBlock articleCount={articleCount} />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
-      <div className="flex items-center justify-center text-(--clr-primary)">
+          </div>
+        )}
+      </div>
+      <div className="flex items-center justify-center text-(--clr-primary) gap-4">
+        <Button
+          label={
+            <>
+              {!isPending && (
+                <div className="flex items-center justify-center gap-2">
+                  <ArrowLeft size={20} />
+                  <span>Previous</span>
+                </div>
+              )}
+              {isPending && isDateCursorLoader && (
+                <div className="flex items-center justify-center gap-2">
+                  <RefreshCw className="animate-spin" size={24} />
+                  <span>Loading...</span>
+                </div>
+              )}
+            </>
+          }
+          type={"button"}
+          disabled={isPending}
+          className="min-w-40 bg-(--clr-background) border-[1px]
+           border-[rgba(73,80,87,0.6)]"
+          onClick={() => prevLoadHandler()}
+        />
         <Button
           label={
             <>
@@ -90,7 +122,7 @@ export const SquareBlockLayout: React.FC = () => {
           disabled={isPending}
           className="min-w-40 bg-(--clr-background) border-[1px]
            border-[rgba(73,80,87,0.6)]"
-          onClick={() => triggerLoadMoreArticles()}
+          onClick={() => nextLoadHandler()}
         />
       </div>
     </div>

@@ -25,7 +25,7 @@ export const SquareBlock: React.FC<SquareBlockProps> = (props) => {
   return (
     <div
       className="w-full h-auto bg-[#0ca678]s aspect-[1/1] p-4 
-      flex flex-col justify-between text-gray-50 rounded-md"
+      flex flex-col justify-between text-gray-50 rounded-mdx roundedx"
       // style={{
       //   background: `linear-gradient(to bottom, rgba(116,143,252,0.005),
       // rgba(116,143,252,0.05),rgba(116,143,252,0.10),rgba(116,143,252,0.015)`,

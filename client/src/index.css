@@ -2,6 +2,10 @@
 
 @import "tailwindcss";
 
+@plugin 'tailwind-scrollbar' {
+  nocompatible: true;
+}
+
 /* * {
   margin: 0;
   padding: 0;
