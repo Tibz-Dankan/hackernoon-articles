@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Layout } from "./Layout";
 import type { TArticle } from "../types/articles";
-import { ArrowRight, InfoIcon, RefreshCw, RotateCcw } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  InfoIcon,
+  RefreshCw,
+  RotateCcw,
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { article } from "../API/articles";
 import { useNavigate, useSearchParams } from "react-router";
@@ -148,127 +154,152 @@ export const Home: React.FC = () => {
   return (
     <Layout>
       <div className="w-full flex flex-col items-center gap-8">
-        <form
-          onSubmit={formik.handleSubmit}
-          className="w-full flex flex-col items-center gap-2 text-gray-200 self-center"
-        >
-          <div
-            className="w-full flex items-center justify-center gap-2 text-base
+        <div className="w-full flex flex-col items-center gap-8 px-4 sm:px-16 lg:px-20">
+          <form
+            onSubmit={formik.handleSubmit}
+            className="w-full flex flex-col items-center gap-2 text-gray-200 self-center"
+          >
+            <div
+              className="w-full flex items-center justify-center gap-2 text-base
             text-gray-400"
-          >
-            <span className="hidden sm:block">
-              <RotateCcw size={20} />
-            </span>
-            <span className="text-center">
-              Time Travel to Our Bitcoin Articles of
-            </span>
-          </div>
-          <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-2">
-            <div className="w-full sm:w-auto">
-              <DatePicker name={"timeTravelBitcoin"} formik={formik} />
-            </div>
-            <Button
-              label={
-                <>
-                  {!isPending && (
-                    <div className="flex items-center justify-center gap-2">
-                      <span>Submit</span>
-                    </div>
-                  )}
-                  {isPending && isDateCursorLoader && (
-                    <div className="flex items-center justify-center gap-2">
-                      <RefreshCw className="animate-spin" size={24} />
-                      <span>Submitting</span>
-                    </div>
-                  )}
-                </>
-              }
-              type={"submit"}
-              disabled={isPending}
-              className="min-w-40 w-full sm:w-auto"
-            />
-          </div>
-        </form>
-        <div className="w-full">
-          <SearchArticles
-            onSuccess={onSearchSuccess}
-            onQueryValue={function (hasQueryValue: boolean): void {
-              console.log("hasQueryValue: ", hasQueryValue);
-            }}
-          />
-        </div>
-        {showArticle && (
-          <div
-            className="flex items-center justify-start gap-2 px-4 py-3
-            rounded-md bg-[#0ca678]/[0.3] w-full"
-          >
-            <span className="w-5 h-5">
-              <InfoIcon className="w-5 h-5 text-gray-200" />
-            </span>
-            <span className="text-gray-200">{getArticleHeader()}</span>
-          </div>
-        )}
-        {showArticle && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {articles.map((article, index) => (
-              <div key={index} className="w-full">
-                <ArticleCard article={article} />
-              </div>
-            ))}
-          </div>
-        )}
-        {showArticle && (
-          <div className="flex items-center justify-center text-(--clr-primary)">
-            <Button
-              label={
-                <>
-                  {!isPending && (
-                    <div className="flex items-center justify-center gap-2">
-                      <span>Next</span>
-                      <ArrowRight size={20} />
-                    </div>
-                  )}
-                  {isPending && isArticleIDCursorLoader && (
-                    <div className="flex items-center justify-center gap-2">
-                      <RefreshCw className="animate-spin" size={24} />
-                      <span>Loading...</span>
-                    </div>
-                  )}
-                </>
-              }
-              type={"button"}
-              disabled={isPending}
-              className="min-w-40 bg-(--clr-background) border-[1px]
-              border-[rgba(73,80,87,0.6)]"
-              onClick={() => triggerLoadMoreArticles()}
-            />
-          </div>
-        )}
-        {!!searchResultCount && (
-          <div
-            className="w-full  relative flex items-center justify-between
-             gap-4 px-4 py-3 rounded-md bg-[#0ca678]/[0.3]"
-          >
-            <p className="text-base w-/5 text-gray-200">
-              {searchResultCount} search results for "{searchQuery}"
-            </p>
-            <span
-              className="cursor-pointer"
-              onClick={() => closeSearchResultHandler()}
             >
-              <X className="w-5 h-5 text-gray-200" />
-            </span>
-          </div>
-        )}
-        {!!searchResultCount && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {searchArticles.map((article, index) => (
-              <div key={index} className="w-full">
-                <ArticleCard article={article} />
+              <span className="hidden sm:block">
+                <RotateCcw size={20} />
+              </span>
+              <span className="text-center">
+                Time Travel to Our Bitcoin Articles of
+              </span>
+            </div>
+            <div className="w-full flex flex-col sm:flex-row items-center justify-center gap-2">
+              <div className="w-full sm:w-auto">
+                <DatePicker name={"timeTravelBitcoin"} formik={formik} />
               </div>
-            ))}
+              <Button
+                label={
+                  <>
+                    {!isPending && (
+                      <div className="flex items-center justify-center gap-2">
+                        <span>Submit</span>
+                      </div>
+                    )}
+                    {isPending && isDateCursorLoader && (
+                      <div className="flex items-center justify-center gap-2">
+                        <RefreshCw className="animate-spin" size={24} />
+                        <span>Submitting</span>
+                      </div>
+                    )}
+                  </>
+                }
+                type={"submit"}
+                disabled={isPending}
+                className="min-w-40 w-full sm:w-auto"
+              />
+            </div>
+          </form>
+          <div className="w-full">
+            <SearchArticles
+              onSuccess={onSearchSuccess}
+              onQueryValue={function (hasQueryValue: boolean): void {
+                console.log("hasQueryValue: ", hasQueryValue);
+              }}
+            />
           </div>
-        )}
+          {showArticle && (
+            <div
+              className="flex items-center justify-start gap-2 px-4 py-3
+               rounded-md bg-[#0ca678]/[0.3] w-full"
+            >
+              <span className="w-5 h-5">
+                <InfoIcon className="w-5 h-5 text-gray-200" />
+              </span>
+              <span className="text-gray-200">{getArticleHeader()}</span>
+            </div>
+          )}
+          {showArticle && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {articles.map((article, index) => (
+                <div key={index} className="w-full">
+                  <ArticleCard article={article} />
+                </div>
+              ))}
+            </div>
+          )}
+          {showArticle && (
+            <div className="flex items-center justify-center text-(--clr-primary) gap-4">
+              <Button
+                label={
+                  <>
+                    {!isPending && (
+                      <div className="flex items-center justify-center gap-2">
+                        <ArrowLeft size={20} />
+                        <span>Previous</span>
+                      </div>
+                    )}
+                    {isPending && isArticleIDCursorLoader && (
+                      <div className="flex items-center justify-center gap-2">
+                        <RefreshCw className="animate-spin" size={24} />
+                        <span>Loading...</span>
+                      </div>
+                    )}
+                  </>
+                }
+                type={"button"}
+                disabled={isPending}
+                className="min-w-40 bg-(--clr-background) border-[1px]
+              border-[rgba(73,80,87,0.6)]"
+                onClick={() => triggerLoadMoreArticles()}
+              />
+              <Button
+                label={
+                  <>
+                    {!isPending && (
+                      <div className="flex items-center justify-center gap-2">
+                        <span>Next</span>
+                        <ArrowRight size={20} />
+                      </div>
+                    )}
+                    {isPending && isArticleIDCursorLoader && (
+                      <div className="flex items-center justify-center gap-2">
+                        <RefreshCw className="animate-spin" size={24} />
+                        <span>Loading...</span>
+                      </div>
+                    )}
+                  </>
+                }
+                type={"button"}
+                disabled={isPending}
+                className="min-w-40 bg-(--clr-background) border-[1px]
+              border-[rgba(73,80,87,0.6)]"
+                onClick={() => triggerLoadMoreArticles()}
+              />
+            </div>
+          )}
+          {!!searchResultCount && (
+            <div
+              className="w-full  relative flex items-center justify-between
+               gap-4 px-4 py-3 rounded-md bg-[#0ca678]/[0.3]"
+            >
+              <p className="text-base w-/5 text-gray-200">
+                {searchResultCount} search results for "{searchQuery}"
+              </p>
+              <span
+                className="cursor-pointer"
+                onClick={() => closeSearchResultHandler()}
+              >
+                <X className="w-5 h-5 text-gray-200" />
+              </span>
+            </div>
+          )}
+          {!!searchResultCount && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {searchArticles.map((article, index) => (
+                <div key={index} className="w-full">
+                  <ArticleCard article={article} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
         <div className="w-full">
           <SquareBlockLayout />
         </div>
