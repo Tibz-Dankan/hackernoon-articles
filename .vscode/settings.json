@@ -4,6 +4,7 @@
     "certificatesresolvers",
     "certresolver",
     "chromedp",
+    "cpus",
     "exposedbydefault",
     "godotenv",
     "gofiber",
