@@ -1,0 +1,78 @@
+name: Build and Deploy Server
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/hackernoon-index:${{ github.sha }}, ${{ secrets.DOCKERHUB_USERNAME }}/hackernoon-index:latest
+
+  deploy:
+    name: Deploy to Server
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.AWS_EC2_SSHKEY }}
+
+      - name: Adding Known Hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.AWS_EC2_HOST }} >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Debug SSH agent
+        run: |
+          echo "SSH agent running: $SSH_AUTH_SOCK"
+          ssh-add -l
+
+      - name: Verify SSH connection
+        run: |
+          ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=no ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }} "echo 'SSH CONNECTION SUCCESSFUL'"
+
+      - name: Copy deploy and install-docker scripts and docker compose file using SSH
+        run: |
+          scp -o StrictHostKeyChecking=no -o IdentitiesOnly=no scripts/install-docker.sh ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }}:~/install-docker.sh
+          scp -o StrictHostKeyChecking=no -o IdentitiesOnly=no scripts/deploy.sh ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }}:~/
+          scp -o StrictHostKeyChecking=no -o IdentitiesOnly=no docker-compose.yaml ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }}:~/
+
+      - name: Install docker on DO server
+        run: |
+          ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=no ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }} "chmod +x ~/install-docker.sh && ~/install-docker.sh"
+
+      - name: Login to Docker Hub on DO server
+        run: |
+          ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=no ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }} "
+            echo '${{ secrets.DOCKERHUB_TOKEN }}' | docker login --username '${{ secrets.DOCKERHUB_USERNAME }}' --password-stdin"
+
+      - name: Deploy to Digital Ocean using SSH
+        run: |
+          ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=no ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }} "chmod +x ~/deploy.sh && ~/deploy.sh ${{ secrets.DOCKERHUB_USERNAME }}/hackernoon-index:${{ github.sha }}"
