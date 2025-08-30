@@ -7,6 +7,7 @@ import (
 
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/events/subscribers"
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/handlers/articles"
+	"github.com/Tibz-Dankan/hackernoon-articles/internal/handlers/health"
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/handlers/status"
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/handlers/uploads"
 	"github.com/Tibz-Dankan/hackernoon-articles/internal/middlewares"
@@ -60,6 +61,9 @@ func main() {
 
 	// Status
 	app.Get("/status", status.GetAppStatus)
+
+	// Health
+	app.Get("/health", health.CheckHealth)
 
 	app.Use("*", func(c *fiber.Ctx) error {
 		message := fmt.Sprintf("api route '%s' doesn't exist!", c.Path())
