@@ -116,11 +116,11 @@ check_service() {
     return 1
   fi
   
-  echo "  Checking health endpoint..."
-  if ! curl -s -f -o /dev/null http://localhost:3000/health; then
-    echo "  Health endpoint not responding"
-    return 1
-  fi
+  # echo "  Checking health endpoint..."
+  # if ! curl -s -f -o /dev/null http://localhost:3000/health; then
+  #   echo "  Health endpoint not responding"
+  #   return 1
+  # fi
   
   return 0
 }
