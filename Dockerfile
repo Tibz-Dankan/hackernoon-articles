@@ -1,5 +1,8 @@
 FROM golang:1.24-alpine 
 
+# Install curl for container health check
+RUN apk add --no-cache curl
+
 WORKDIR /app/server
 
 COPY server/go.mod server/go.sum ./

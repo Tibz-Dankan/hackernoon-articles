@@ -64,15 +64,15 @@ jobs:
           scp -o StrictHostKeyChecking=no -o IdentitiesOnly=no scripts/deploy.sh ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }}:~/
           scp -o StrictHostKeyChecking=no -o IdentitiesOnly=no docker-compose.yaml ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }}:~/
 
-      - name: Install docker on DO server
+      - name: Install docker on aws ec2
         run: |
           ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=no ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }} "chmod +x ~/install-docker.sh && ~/install-docker.sh"
 
-      - name: Login to Docker Hub on DO server
+      - name: Login to Docker Hub on aws ec2
         run: |
           ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=no ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }} "
             echo '${{ secrets.DOCKERHUB_TOKEN }}' | docker login --username '${{ secrets.DOCKERHUB_USERNAME }}' --password-stdin"
 
-      - name: Deploy to Digital Ocean using SSH
+      - name: Deploy to aws ec2 using SSH
         run: |
           ssh -o StrictHostKeyChecking=no -o IdentitiesOnly=no ${{ secrets.AWS_EC2_USERNAME }}@${{ secrets.AWS_EC2_HOST }} "chmod +x ~/deploy.sh && ~/deploy.sh ${{ secrets.DOCKERHUB_USERNAME }}/hackernoon-index:${{ github.sha }}"
