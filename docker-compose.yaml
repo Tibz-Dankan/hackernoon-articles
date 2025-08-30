@@ -1,7 +1,7 @@
 version: "3.8"
 
 services:
-  hr-backend-v2:
+  hackernoon-index:
     image: mmarvinken/hackernoon-index:latest
     env_file:
       - ./.env
