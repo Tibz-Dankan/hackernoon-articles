@@ -82,31 +82,59 @@ fi
 # Wait for backend service to be running and available on port 3000
 echo "Waiting for backend service to start and be available on port 3000..."
 
-# Function to check if service is running properly
+# # Function to check if service is running properly
+# check_service() {
+#   # Check if service exists and is running with correct replica count
+#   if docker service ls | grep app-stack_hackernoon-index | grep -q "1/1"; then
+#     # Check if port 3000 is listening
+#     if timeout 5 bash -c "</dev/tcp/localhost/3000" &>/dev/null; then
+#       # Check if health endpoint returns 200 OK
+#       if curl -s -f -o /dev/null http://localhost:3000/health; then
+#         return 0  # Service is running properly
+#       fi
+#     fi
+#   fi
+#   return 1  # Service is not running properly
+# }
+
 check_service() {
-  # Check if service exists and is running with correct replica count
-  if docker service ls | grep app-stack_hackernoon-index | grep -q "1/1"; then
-    # Check if port 3000 is listening
-    if timeout 5 bash -c "</dev/tcp/localhost/3000" &>/dev/null; then
-      # Check if health endpoint returns 200 OK
-      if curl -s -f -o /dev/null http://localhost:3000/health; then
-        return 0  # Service is running properly
-      fi
-    fi
+  echo "  Checking service existence..."
+  if ! docker service ls | grep -q app-stack_hackernoon-index; then
+    echo "  Service app-stack_hackernoon-index not found"
+    return 1
   fi
-  return 1  # Service is not running properly
+  
+  echo "  Checking service replicas..."
+  if ! docker service ls | grep app-stack_hackernoon-index | grep -q "1/1"; then
+    echo "  Service replicas not ready yet"
+    return 1
+  fi
+  
+  echo "  Checking port 3000..."
+  if ! timeout 5 bash -c "</dev/tcp/localhost/3000" &>/dev/null; then
+    echo "  Port 3000 not accessible"
+    return 1
+  fi
+  
+  echo "  Checking health endpoint..."
+  if ! curl -s -f -o /dev/null http://localhost:3000/health; then
+    echo "  Health endpoint not responding"
+    return 1
+  fi
+  
+  return 0
 }
 
 # Keep checking until service is running or timeout 
 MAX_ATTEMPTS=40
 ATTEMPT=1
-WAIT_TIME=10  # seconds between attempts
+WAIT_TIME=5 # seconds between attempts
 
 while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
   echo "Checking if backend service is running (attempt $ATTEMPT/$MAX_ATTEMPTS)..."
   
   if check_service; then
-    echo "Backend service is now running and available on port 8000!"
+    echo "Backend service is now running and available on port 3000!"
     break
   fi
   
