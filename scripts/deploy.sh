@@ -86,10 +86,10 @@ echo "Waiting for backend service to start and be available on port 3000..."
 check_service() {
   # Check if service exists and is running with correct replica count
   if docker service ls | grep app-stack_hackernoon-index | grep -q "1/1"; then
-    # Check if port 8000 is listening
+    # Check if port 3000 is listening
     if timeout 5 bash -c "</dev/tcp/localhost/3000" &>/dev/null; then
       # Check if health endpoint returns 200 OK
-      if curl -s -f -o /dev/null http://localhost:3000; then
+      if curl -s -f -o /dev/null http://localhost:3000/health; then
         return 0  # Service is running properly
       fi
     fi
