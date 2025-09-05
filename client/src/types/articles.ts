@@ -30,6 +30,10 @@ type GetAllArticles = {
   offset?: string;
 };
 
+type GetByDay = {
+  day: string;
+};
+
 type SearchArticles = {
   limit: number;
   query: string;
@@ -47,6 +51,7 @@ export type TArticle = {
   article: Prettify<Article>;
   author: Prettify<Author>;
   getAllArticles: Prettify<GetAllArticles>;
+  getByDay: Prettify<GetByDay>;
   searchArticles: Prettify<SearchArticles>;
   countArticle: Prettify<CountArticle>;
 };
