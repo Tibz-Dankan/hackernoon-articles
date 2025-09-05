@@ -52,6 +52,7 @@ func main() {
 
 	userGroup.Get("/search", articles.SearchArticles)
 	userGroup.Get("/day-count", articles.GetArticleCountPerDay)
+	userGroup.Get("/day/:postedAt", articles.GetArticlesByDay)
 
 	// uploads
 	uploadGroup := app.Group("/api/v0.1/uploads", func(c *fiber.Ctx) error {

@@ -33,7 +33,7 @@ var GetArticleCountPerDay = func(c *fiber.Ctx) error {
 		log.Printf("parsedDateCursorParam: %v\n", parsedDateCursorParam)
 	}
 
-	articleCountPerDay, err := articles.GetArticleCountPerDay(int(limit), parsedDateCursorParam)
+	articleCountPerDay, err := articles.FindArticleCountPerDay(int(limit), parsedDateCursorParam)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}

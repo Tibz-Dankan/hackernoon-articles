@@ -203,41 +203,26 @@ func (a *Article) SearchByTagIndex(searchQuery string) ([]Article, int64, error)
 	return articles, count, nil
 }
 
-// func (a *Article) GetArticleCountPerDay(limit int, dateCursor time.Time) ([]map[string]interface{}, error) {
-// 	var results []struct {
-// 		Date  time.Time `json:"date"`
-// 		Count int64     `json:"count"`
-// 	}
+func (a *Article) FindByPostedAt(date time.Time) ([]Article, error) {
+	var articles []Article
+	
+	startOfDay := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, date.Location())
+	endOfDay := startOfDay.AddDate(0, 0, 1)
+	
+	err := db.Model(&Article{}).
+		Preload("Author").
+		Where("\"postedAt\" >= ? AND \"postedAt\" < ?", startOfDay, endOfDay).
+		Order("\"postedAt\" DESC").
+		Find(&articles).Error
+	
+	if err != nil {
+		return nil, err
+	}
+	
+	return articles, nil
+}
 
-// 	query := db.Model(&Article{}).
-// 		Select("DATE(\"postedAt\") as date, COUNT(*) as count").
-// 		Group("DATE(\"postedAt\")").
-// 		Order("date DESC").
-// 		Limit(limit)
-
-// 	// Apply date cursor for pagination
-// 	if !dateCursor.IsZero() {
-// 		query = query.Where("DATE(\"postedAt\") < DATE(?)", dateCursor)
-// 	}
-
-// 	if err := query.Find(&results).Error; err != nil {
-// 		return nil, err
-// 	}
-
-// 	// Convert results to the desired format
-// 	var dayArticleCounts []map[string]interface{}
-// 	for _, result := range results {
-// 		dayData := map[string]interface{}{
-// 			"date":  result.Date.Format("2006-01-02"),
-// 			"count": result.Count,
-// 		}
-// 		dayArticleCounts = append(dayArticleCounts, dayData)
-// 	}
-
-// 	return dayArticleCounts, nil
-// }
-
-func (a *Article) GetArticleCountPerDay(limit int, dateCursor time.Time) ([]map[string]interface{}, error) {
+func (a *Article) FindArticleCountPerDay(limit int, dateCursor time.Time) ([]map[string]interface{}, error) {
 	var results []struct {
 		Date  time.Time `json:"date"`
 		Count int64     `json:"count"`
@@ -297,6 +282,7 @@ func (a *Article) GetArticleCountPerDay(limit int, dateCursor time.Time) ([]map[
 
 	return dayArticleCounts, nil
 }
+
 
 func (a *Article) CountDistinctDays(count *int64) error {
 	return db.Model(&Article{}).

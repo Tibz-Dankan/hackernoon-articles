@@ -37,7 +37,8 @@ func Db() *gorm.DB {
 
 		switch env {
 		case "development":
-			gormDB, err = gorm.Open(postgres.Open(os.Getenv("HACKERNOON_DEV_DSN")), &gorm.Config{
+			// gormDB, err = gorm.Open(postgres.Open(os.Getenv("HACKERNOON_DEV_DSN")), &gorm.Config{
+			gormDB, err = gorm.Open(postgres.Open(os.Getenv("HACKERNOON_PROD_DSN")), &gorm.Config{
 				SkipDefaultTransaction: true,
 				PrepareStmt:            true,
 				Logger:                 logger.Default.LogMode(logger.Info),
