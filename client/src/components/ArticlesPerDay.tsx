@@ -46,7 +46,7 @@ const ArticlesPerDay: React.FC<ArticlesPerDayProps> = (props) => {
   return (
     <div className="flex items-center justify-center">
       {hasArticles && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3s gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {articles.map((article, index) => (
             <div key={index} className="w-full">
               <ArticleCard article={article} />

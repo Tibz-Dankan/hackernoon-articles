@@ -49,7 +49,7 @@ export const SquareBlock: React.FC<SquareBlockProps> = (props) => {
       }
     >
       <div
-        className="bg-(--clr-background) w-[60vw] max-w-[60vw] max-h-[80vh]
+        className="bg-(--clr-background) w-[90vw] sm:w-[80vw] lg:max-w-[60vw] max-h-[80vh]
          p-4 rounded-md overflow-x-hidden"
       >
         <p
