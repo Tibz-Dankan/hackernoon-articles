@@ -2,7 +2,7 @@ name: Build and Deploy Server
 
 on:
   push:
-    branches: [main]
+    branches: [dev]
 
 jobs:
   build:
