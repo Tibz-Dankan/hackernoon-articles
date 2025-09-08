@@ -78,7 +78,8 @@ export const Home: React.FC = () => {
           },
           { replace: true }
         );
-      } catch (error) {
+      } catch (error: any) {
+        console.log("Error: ", error.message);
         helpers.setStatus({ success: false });
         helpers.setSubmitting(false);
       }
